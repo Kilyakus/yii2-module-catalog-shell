@@ -1,0 +1,20 @@
+{
+    "name": "kilyakus/yii2-module-directory-shell",
+    "type": "yii2-extension",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kilyakus",
+            "email": "aleksandr.kilyakov@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": ">=2.0.0",
+        "kilyakus/yii2-module-base": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "kilyakus\\shell\\directory\\": "src"
+        }
+    }
+}

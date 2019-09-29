@@ -1,0 +1,20 @@
+#categoryFields{margin-top: 20px;}
+#addField, #saveCategoryBtn {margin-left: 8px;}
+button.tree-toggle {width:20px;height:20px;text-align:center!important;}
+.caret-right {border-bottom:4px solid transparent;border-top:4px solid transparent;border-left:4px solid;display:inline-block;height:0;vertical-align:top;width:0;}
+
+.table-field {font-size:14px;}
+.table-field th,
+.table-field td {min-width:87px!important;border-bottom:0px!important;}
+.table-field th:first-child,
+.table-field td:first-child {min-width:150px;max-width:150px;}
+
+.field-form {display:flex;justify-content:center;}
+.field-form .nav-tabs {display:flex;flex-direction:column;min-width:150px;}
+.field-form .nav-tabs > li > a,
+.field-form .nav-tabs > li > a:hover,
+.field-form .nav-tabs > li > a:focus {margin-right:0px!important;border:0px!important;border-radius:0px!important;}
+.field-form .nav-tabs > li.active > a,
+.field-form .nav-tabs > li.active > a:hover,
+.field-form .nav-tabs > li.active > a:focus {background-color:#e5e5e5;}
+.field-form .tab-content {width:100%;padding:20px;border-left:1px solid #e5e5e5;}
