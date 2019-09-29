@@ -13,7 +13,7 @@
         "kilyakus/yii2-helper-base": "*",
         "kilyakus/yii2-module-base": "*",
         "kilyakus/yii2-template-engine": "*",
-        "kilyakus/yii2-widget-maps": "dev-master"
+        "kilyakus/yii2-widget-maps": "*"
     },
     "autoload": {
         "psr-4": {
