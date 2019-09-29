@@ -606,7 +606,7 @@ class ItemsController extends \bin\admin\components\Controller
     {
         if(API::getModule($this->moduleName)->settings['enableCategory'] && count($fields)){
             // return self::getFields($fields,$data);
-            return parent::renderPartial('dataForm.php',['fields' => $fields,'data' => $data]);
+            return parent::renderPartial('@kilyakus/shell/directory/views/items/dataForm',['fields' => $fields,'data' => $data]);
         }else{
             return false;
         }
