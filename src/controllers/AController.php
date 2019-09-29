@@ -37,7 +37,7 @@ class AController extends \bin\admin\controllers\CategoryController
             $model = new $Category;
         }
 
-        return $this->render('@bin/admin/relations/catalog/views/a/fields', [
+        return $this->render('@kilyakus/shell/directory/views/a/fields', [
             'model' => $model,
         ]);
     }
@@ -50,7 +50,7 @@ class AController extends \bin\admin\controllers\CategoryController
             $model = new $Category;
         }
 
-        return $this->render('@bin/admin/relations/catalog/views/a/engine', [
+        return $this->render('@kilyakus/shell/directory/views/a/engine', [
             'model' => $model,
         ]);
     }
@@ -63,7 +63,7 @@ class AController extends \bin\admin\controllers\CategoryController
             return $this->redirect(['/admin/'.$this->module->id]);
         }
 
-        return $this->render('@bin/admin/relations/catalog/views/a/types', [
+        return $this->render('@kilyakus/shell/directory/views/a/types', [
             'model' => $model,
         ]);
     }
@@ -77,7 +77,7 @@ class AController extends \bin\admin\controllers\CategoryController
             // return $this->redirect(['/admin/'.$this->module->id]);
         }
 
-        return $this->render('@bin/admin/relations/catalog/views/a/contacts', [
+        return $this->render('@kilyakus/shell/directory/views/a/contacts', [
             'model' => $model,
         ]);
     }
@@ -121,14 +121,14 @@ class AController extends \bin\admin\controllers\CategoryController
             $model->forums = implode(',',array_unique($forums));
             $model->update();
 
-            return $this->renderAjax('@bin/admin/relations/catalog/views/a/forums', [
+            return $this->renderAjax('@kilyakus/shell/directory/views/a/forums', [
                 'items' => $items,
                 'model' => $model,
             ]);
 
         }
 
-        return $this->render('@bin/admin/relations/catalog/views/a/forums', [
+        return $this->render('@kilyakus/shell/directory/views/a/forums', [
             'items' => $items,
             'model' => $model,
         ]);

@@ -344,7 +344,7 @@ class ItemsController extends \bin\admin\components\Controller
             $dataForm[$key] = (object)$data;
         }
 
-        return $this->renderAjax('@bin/admin/relations/catalog/views/items/dataForm',['dataForm' => $this->generateForm($dataForm)]);
+        return $this->renderAjax('@kilyakus/shell/directory/views/items/dataForm',['dataForm' => $this->generateForm($dataForm)]);
     }
 
     public function actionDelete($id)
@@ -501,7 +501,7 @@ class ItemsController extends \bin\admin\components\Controller
             $this->layout = '@app/views/layouts/' . $this->module->id . '.php';
             $layout = '@app/modules/' . $this->module->id . '/views/f/' . $layout;
         }else{
-            $layout = '@bin/admin/relations/catalog/views/items/' . $layout;
+            $layout = '@kilyakus/shell/directory/views/items/' . $layout;
         }
         if(Yii::$app->request->isAjax){
             return $this->renderAjax($layout,$options);
