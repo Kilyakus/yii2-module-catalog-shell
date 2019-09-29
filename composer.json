@@ -12,7 +12,8 @@
         "yiisoft/yii2": ">=2.0.0",
         "kilyakus/yii2-helper-base": "*",
         "kilyakus/yii2-module-base": "*",
-        "kilyakus/yii2-template-engine": "*"
+        "kilyakus/yii2-template-engine": "*",
+        "kilyakus/yii2-widget-maps": "dev-master"
     },
     "autoload": {
         "psr-4": {
