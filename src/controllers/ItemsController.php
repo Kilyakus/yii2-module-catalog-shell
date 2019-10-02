@@ -673,16 +673,23 @@ class ItemsController extends \bin\admin\components\Controller
         }
         if($image != false){
             $image = Html::img(
-                Image::thumb($field->image, 34,34),[
+                Image::thumb($field->image, 41,41),[
                     'class' => 'img-responsive btn btn-icon',
-                    'style' => 'background:#F1F1F1;',
-                    'data-toggle' => 'tooltip',
-                    'data-placement' => 'right',
-                    'data-html' => 'true',
-                    'data-original-title' => $field->text,
                 ]
             );
-            return $label.'<div class="input-group"><label for="data-'.$field->name.'" class="input-group-prepend">'.$image.'</label>'.$html.'</div>';
+
+            $image = '<label for="data-'.$field->name.'" class="input-group-prepend">'.$image.'</label>';
+
+            $html = Html::tag('div',$image.$html,[
+                'class' => 'form-group input-group',
+                'data-toggle' => 'kt-tooltip',
+                'data-skin' => 'dark',
+                'data-placement' => 'bottom',
+                'data-html' => 'true',
+                'data-original-title' => $field->text,
+            ]);
+
+            return $label.$html;
         }else{
             return $label.$html;
         }
