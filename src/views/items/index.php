@@ -8,6 +8,7 @@ use bin\admin\modules\catalog\models\Item;
 use bin\admin\helpers\Image;
 use bin\admin\modules\chat\models\Group;
 use kilyakus\web\widgets as Widget;
+use kilyakus\web\templates\UserCard\UserCard;
 use yii\web\JsExpression;
 
 $settings = $this->context->module->settings;
@@ -52,11 +53,11 @@ foreach($items as $item){
             'options' => ['class' => $status],
         ],
         [
-            'content' => \kilyakus\web\templates\UserCard\UserCard::widget(['id' => $item->created_by, 'url' => Url::toRoute(['/user/admin/info/', 'id' => $item->created_by])]), 
+            'content' => UserCard::widget(['id' => $item->created_by, 'url' => Url::toRoute(['/user/admin/info/', 'id' => $item->created_by])]), 
             'options' => ['class' => $status],
         ],
         [
-            'content' => \kilyakus\web\templates\UserCard\UserCard::widget(['id' => $item->updated_by, 'url' => Url::toRoute(['/user/admin/info/', 'id' => $item->updated_by])]), 
+            'content' => UserCard::widget(['id' => $item->updated_by, 'url' => Url::toRoute(['/user/admin/info/', 'id' => $item->updated_by])]), 
             'options' => ['class' => $status],
         ],
         [
