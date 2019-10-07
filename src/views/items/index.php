@@ -20,7 +20,7 @@ $chatClass = $this->context->chatClass;
 $this->title = Yii::t('easyii/' . $moduleName, ucfirst($moduleName)) . (!$model->title ?: ': ' . $model->title);
 
 foreach($items as $item){
-    $status = $item->status == Item::STATUS_ON ?: 'kt-bg-light-warning';
+    $status = $item->status == Item::STATUS_ON ? '' : 'kt-bg-light-warning';
     $chat = $chatClass::find()->where(['item_id' => $item['item_id']])->one();
     $categories = [];
     foreach ($item->_categories as $category) {
@@ -52,11 +52,11 @@ foreach($items as $item){
             'options' => ['class' => $status],
         ],
         [
-            'content' => Html::a(User::findOne($item->created_by)->username, Url::toRoute(['/user/admin/info/', 'id' => $item->created_by]), ['class' => 'btn btn-xs btn-default btn-block',]), 
+            'content' => \kilyakus\web\templates\UserCard\UserCard::widget(['id' => $item->created_by, 'url' => Url::toRoute(['/user/admin/info/', 'id' => $item->created_by])]), 
             'options' => ['class' => $status],
         ],
         [
-            'content' => Html::a(User::findOne($item->updated_by ? $item->updated_by : $item->created_by)->username, Url::toRoute(['/user/admin/info/', 'id' => $item->updated_by ? $item->updated_by : $item->created_by]), ['class' => 'btn btn-xs btn-default btn-block',]), 
+            'content' => \kilyakus\web\templates\UserCard\UserCard::widget(['id' => $item->updated_by, 'url' => Url::toRoute(['/user/admin/info/', 'id' => $item->updated_by])]), 
             'options' => ['class' => $status],
         ],
         [
@@ -177,8 +177,8 @@ foreach($items as $item){
                         ['content' => '', 'options' => ['width' => 60], 'visible' => $settings['itemThumb']],
                         ['content' => Yii::t('easyii', 'Title')],
                         ['content' => Yii::t('easyii', 'Categories'), 'options' => ['width' => '200px']],
-                        ['content' => Yii::t('easyii', 'Created by'), 'options' => ['width' => '150px']],
-                        ['content' => Yii::t('easyii', 'Updated by'), 'options' => ['width' => '150px']],
+                        ['content' => Yii::t('easyii', 'Created by'), 'options' => ['width' => '160px']],
+                        ['content' => Yii::t('easyii', 'Updated by'), 'options' => ['width' => '160px']],
                         ['content' => Yii::t('easyii', 'Views'), 'options' => ['width' => '120px']],
                         ['content' => '', 'options' => ['width' => 30], 'visible' => IS_ADMIN],
                     ],
