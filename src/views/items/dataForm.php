@@ -4,9 +4,16 @@ use kilyakus\imageprocessor\Image;
 use kilyakus\web\widgets as Widget;
 ?>
 <style type="text/css">
-.select2-container.form-control {width:0px!important;}
+.select2-container.form-control {width:0!important;}
 .kt-portlet {width:100%;}
+.form-group.input-group {display:flex;flex-wrap:nowrap;}
 </style>
+
+<?php if($this->context->module->module->id == 'page') : ?>
+<style type="text/css">
+.select2-container.form-control {width:100%!important;}
+</style>
+<?php endif; ?>
 <?php foreach ($fields as $key => $field) : ?>
     <?php if(count($field->children)) : ?>
         <?php if(!$field->parent) : ?>
