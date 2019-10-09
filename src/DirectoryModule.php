@@ -1,7 +1,7 @@
 <?php
 namespace kilyakus\shell\directory;
 
-class CatalogModule extends \kilyakus\modules\components\Module
+class DirectoryModule extends \kilyakus\modules\components\Module
 {
     public $icon;
     
