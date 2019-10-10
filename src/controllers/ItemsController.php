@@ -343,8 +343,7 @@ class ItemsController extends \bin\admin\components\Controller
         foreach ($dataForm as $key => $data) {
             $dataForm[$key] = (object)$data;
         }
-
-        return $this->renderAjax('@kilyakus/shell/directory/views/items/dataForm',['dataForm' => $this->generateForm($dataForm)]);
+        return $this->renderAjax('@kilyakus/shell/directory/views/items/dataForm',['fields' => $dataForm]);
     }
 
     public function actionDelete($id)
