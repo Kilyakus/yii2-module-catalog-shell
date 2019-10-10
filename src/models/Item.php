@@ -51,6 +51,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
             ['status', 'default', 'value' => self::STATUS_ON],
             ['tagNames', 'safe'],
             ['owner', 'integer'],
+            ['webcams', 'safe'],
             [['latitude','longitude'], 'required', 
                 'when' => function ($model) {
                      return !empty($model->city_id);

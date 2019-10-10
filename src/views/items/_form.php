@@ -172,13 +172,15 @@ if(count($model->category->types)){
     ]
 ]) ?>
 
-<?php if(count($dataForm) == 1) : ?>
-    <?= $dataForm; ?>
-<?php else: ?>
-    <?php foreach ($dataForm as $data) : ?>
-        <?= $data; ?>
-    <?php endforeach; ?>
-<?php endif; ?>
+<div class="row" style="margin:0;">
+    <?php if(count($dataForm) == 1) : ?>
+        <?= $dataForm; ?>
+    <?php else: ?>
+        <?php foreach ($dataForm as $data) : ?>
+            <?= $data; ?>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
 
 <?php if($settings['itemSale']) : ?>
     <?= $form->field($model, 'available') ?>
