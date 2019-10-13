@@ -43,7 +43,7 @@ foreach($items as $item){
             'visible' => $settings['itemThumb']
         ],
         [
-            'content' => Html::a($item->title, Url::to(['/' . $module . '/'.$moduleName.'/items/edit', 'id' => $item->primaryKey])),
+            'content' => Html::a($item->translate->title, Url::to(['/' . $module . '/'.$moduleName.'/items/edit', 'id' => $item->primaryKey])),
             'options' => ['class' => $status],
         ],
         [

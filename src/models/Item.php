@@ -6,6 +6,7 @@ use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
 use yii\behaviors\SluggableBehavior;
 use bin\admin\behaviors\SeoBehavior;
+use bin\admin\behaviors\TranslateBehavior;
 use bin\admin\behaviors\Taggable;
 use kilyakus\cutter\behaviors\CutterBehavior;
 use bin\admin\models\Photo;
@@ -36,7 +37,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
     public function rules()
     {
         $rules = [
-            ['title', 'required'],
+            // ['title', 'required'],
             ['title', 'trim'],
             [['parent_class','title','permission','gradient','gradient_to','latitude','longitude'], 'string', 'max' => 255],
             ['parent_id', 'default'],
@@ -105,6 +106,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
     {
         return [
             'seoBehavior' => SeoBehavior::className(),
+            'translateBehavior' => TranslateBehavior::className(),
             'taggabble' => Taggable::className(),
             'sluggable' => [
                 'class' => SluggableBehavior::className(),

@@ -18,6 +18,7 @@ use bin\admin\helpers\IpHelper;
 use bin\admin\widgets\Redactor;
 use bin\admin\widgets\TagsInput;
 use bin\admin\widgets\SeoForm;
+use bin\admin\widgets\TranslateForm;
 use kilyakus\modules\models\Setting;
 
 use kilyakus\shell\directory\assets\FieldsAsset;
@@ -78,8 +79,9 @@ if(count($model->category->types)){
         ]);
     ?>
 <?php endif; ?>
+<?= TranslateForm::widget(['form' => $form, 'model' => $model, 'attribute' => 'title']) ?>
 <div class="row">
-<?= $form->field($model, 'title', ['options' => ['class' => 'col-xs-12 ' . IS_MODER ? 'col-md-6' : 'col-md-12']]) ?>
+<?php $form->field($model, 'title', ['options' => ['class' => 'col-xs-12 ' . IS_MODER ? 'col-md-6' : 'col-md-12']]) ?>
     <?php if(IS_MODER) : ?>
         <?= $form->field($model, 'slug', ['options' => ['class' => 'col-xs-12 col-md-6']])->input('text',['placeholder' => 'Leave the field blank for automatic URL generation.']) ?>
     <?php endif; ?>
@@ -162,15 +164,7 @@ if(count($model->category->types)){
     </div>
 <?php endif; ?>
 
-<?= $form->field($model, 'description')->widget(Redactor::className(),[
-    'options' => [
-        'minHeight' => 200,
-        'maxHeight' => 300,
-        'imageUpload' => Url::to(['/admin/redactor/upload', 'dir' => 'infrastructure'], true),
-        'fileUpload' => Url::to(['/admin/redactor/upload', 'dir' => 'infrastructure'], true),
-        'plugins' => ['fullscreen']
-    ]
-]) ?>
+<?= TranslateForm::widget(['form' => $form, 'model' => $model, 'attribute' => 'description']) ?>
 
 <div class="row" style="margin:0;">
     <?php if(count($dataForm) == 1) : ?>
