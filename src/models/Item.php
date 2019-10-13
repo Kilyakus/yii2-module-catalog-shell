@@ -36,39 +36,45 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
     public function rules()
     {
-        $rules = [
-            // ['title', 'required'],
-            ['title', 'trim'],
-            [['parent_class','title','permission','gradient','gradient_to','latitude','longitude'], 'string', 'max' => 255],
-            ['parent_id', 'default'],
-            [['preview','image',], 'image'],
-            ['description', 'safe'],
-            ['price', 'number'],
-            ['discount', 'integer', 'max' => 100],
-            [['type_id','views','country_id','region_id','city_id','street_id','street_number_id', 'available', 'time', 'created_by', 'updated_by', 'owner', 'status'], 'integer'],
-            [['time','time_to'], 'default', 'value' => time()],
-            ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')],
-            ['slug', 'default', 'value' => null],
-            ['status', 'default', 'value' => self::STATUS_ON],
-            ['tagNames', 'safe'],
-            ['owner', 'integer'],
-            ['webcams', 'safe'],
-            [['latitude','longitude'], 'required', 
-                'when' => function ($model) {
-                     return !empty($model->city_id);
-                 },
-                'whenClient' => 'function(attribute,value){
-                    if($("#' . Html::getInputId($this, 'latitude') . '").val()==""){
-                        $(".field-item-locality_id .alert.alert-danger").remove()
-                        $(".field-item-locality_id").append("<div class=\"alert alert-danger mt-15 mb-0\">' . Yii::t('easyii', 'You must enter the marker on the map') . '<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">×</span></button></div>");
-                    }
-                    return $("#' . Html::getInputId($this, 'city_id') . '").val()!=="";
-                }','message' => ''// Yii::t('easyii', 'You must enter the marker on the map')
-            ],
+        $rules = [];
+        $rules[] = ['title', 'trim'];
+        $rules[] = [['parent_class','title','permission','gradient','gradient_to','latitude','longitude'], 'string', 'max' => 255];
+        $rules[] = ['parent_id', 'default'];
+        $rules[] = [['preview','image',], 'image'];
+        $rules[] = ['description', 'safe'];
+        $rules[] = ['price', 'number'];
+        $rules[] = ['discount', 'integer', 'max' => 100];
+        $rules[] = [['type_id','views','country_id','region_id','city_id','street_id','street_number_id', 'available', 'time', 'created_by', 'updated_by', 'owner', 'status'], 'integer'];
+        $rules[] = [['time','time_to'], 'default', 'value' => time()];
+        $rules[] = ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')];
+        $rules[] = ['slug', 'default', 'value' => null];
+        $rules[] = ['status', 'default', 'value' => self::STATUS_ON];
+        $rules[] = ['tagNames', 'safe'];
+        $rules[] = ['owner', 'integer'];
+        $rules[] = ['webcams', 'safe'];
+        $rules[] = [['latitude','longitude'], 'required',
+            'when' => function ($model) {
+                 return !empty($model->city_id);
+             },
+            'whenClient' => 'function(attribute,value){
+                if($("#' . Html::getInputId($this, 'latitude') . '").val()==""){
+                    $(".field-item-locality_id .alert.alert-danger").remove()
+                    $(".field-item-locality_id").append("<div class=\"alert alert-danger mt-15 mb-0\">' . Yii::t('easyii', 'You must enter the marker on the map') . '<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">×</span></button></div>");
+                }
+                return $("#' . Html::getInputId($this, 'city_id') . '").val()!=="";
+            }','message' => ''// Yii::t('easyii', 'You must enter the marker on the map')
         ];
 
+        if(!Yii::$app->request->post('TranslateText')){
+            $rules[] = ['title', 'required'];
+        }
+
+        if($this->module->settings['itemSale']){
+            $rules[] = ['price', 'required'];
+        }
+        
         if($this->module->settings['enableCategory']){
-            $rules = array_merge($rules,[['category_id', 'required', 'message' => Yii::t('easyii', 'Select category')]]);
+            $rules[] = ['category_id', 'required', 'message' => Yii::t('easyii', 'Select category')];
         }
 
         return $rules;
