@@ -362,7 +362,8 @@ class ItemsController extends \bin\admin\components\Controller
         }
         
         $this->formatResponse(Yii::t('easyii/' . $this->moduleName, 'Item deleted'));
-        return $this->redirect(['/' . $module . '/'.$this->module->id]);
+        // return $this->redirect(['/' . $module . '/'.$this->module->id]);
+        return $this->back();
     }
 
     public function actionCopy($id)
@@ -636,7 +637,7 @@ class ItemsController extends \bin\admin\components\Controller
                 $options .= '<th>'.$option.'</th>';
             }
             $result .= '<table class="table table-hover table-bordered">'.
-            '<thead><tr><th width="250" style="border-bottom:0px;">'.$field->title.'</th>'.$options.'</tr></thead>'.
+            '<thead><tr><th width="250" style="border-bottom:0px;">'.Yii::t('easyii',$field->title).'</th>'.$options.'</tr></thead>'.
             '<tbody>'.
             self::getFields($field->children,$data,$field).
             '</tbody>'.
@@ -658,8 +659,8 @@ class ItemsController extends \bin\admin\components\Controller
     public function genHead($field){
 
         $result .= !$field->parent 
-            ? '<div class="panel-heading" role="tab" id="category-'.$field->name.'"><div class="panel-title"><a data-toggle="collapse" href="#collapse-'.$field->name.'" aria-expanded="true" aria-controls="collapse-'.$field->name.'" class="pull-right toggle"><div class="close-block"></div></a>'. $field->title .'</div></div>' 
-            : '<label for="data-'.$field->name.'">'. $field->title .'</label>';
+            ? '<div class="panel-heading" role="tab" id="category-'.$field->name.'"><div class="panel-title"><a data-toggle="collapse" href="#collapse-'.$field->name.'" aria-expanded="true" aria-controls="collapse-'.$field->name.'" class="pull-right toggle"><div class="close-block"></div></a>'. Yii::t('easyii', $field->title) .'</div></div>' 
+            : '<label for="data-'.$field->name.'">'. Yii::t('easyii', $field->title) .'</label>';
 
         return $result;
 
@@ -668,7 +669,7 @@ class ItemsController extends \bin\admin\components\Controller
     public function genContainer($html = null,$field = null,$label = true,$image = true){
 
         if($label != false){
-            $label = '<label for="data-'.$field->name.'">'. $field->title .'</label>';
+            $label = '<label for="data-'.$field->name.'">'. Yii::t('easyii', $field->title) .'</label>';
         }
         if($image != false){
             $image = Html::img(
@@ -752,7 +753,7 @@ class ItemsController extends \bin\admin\components\Controller
         }
         elseif ($field->type === 'boolean' && self::table($field) != true) {
 
-            $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value,['uncheck' => 0]]).'<span class="ml-10">'.$field->title.'</span></label>';
+            $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value,['uncheck' => 0]]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
             $result .= self::genContainer($html,$field,true);
 
         }
@@ -789,7 +790,7 @@ class ItemsController extends \bin\admin\components\Controller
 
             }else{
 
-                $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value]).'<span class="ml-10">'.$field->title.'</span></label>';
+                $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
                 $result .= self::genContainer($html,$field,false);
 
             }
@@ -807,7 +808,7 @@ class ItemsController extends \bin\admin\components\Controller
 
                 $value = !empty($data->{$parent->name}) ? $data->{$parent->name} : null;
                 $checked = $value && $field->title == $value[0];
-                $html = '<label class="v-align mt-10">'. Html::radio("Data[{$parent->name}][]", $checked, ['class' => 'switch','value' => $field->title]).'<span class="ml-10">'.$field->title.'</span></label>';
+                $html = '<label class="v-align mt-10">'. Html::radio("Data[{$parent->name}][]", $checked, ['class' => 'switch','value' => Yii::t('easyii', $field->title)]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
                 $result .= self::genContainer($html,$field,false);
 
             }

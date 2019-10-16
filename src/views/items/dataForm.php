@@ -20,7 +20,7 @@ use kilyakus\web\widgets as Widget;
             <?php if(!$field->parent) : ?>
 
                 <?php Widget\Portlet::begin([
-                    'title' => $field->title,
+                    'title' => Yii::t('easyii', $field->title),
                     'options' => [
                         'class' => 'kt-portlet--bordered',
                     ],
@@ -30,7 +30,7 @@ use kilyakus\web\widgets as Widget;
                 
                 <div class="col-xs-12">
                     <?php Widget\Section::begin([
-                        'title' => $field->title . ':',
+                        'title' => Yii::t('easyii', $field->title) . ':',
                         'separator' => [
                             'class' => 'kt-separator kt-separator--border-dashed kt-separator--space-lg',
                         ],
@@ -98,7 +98,7 @@ use kilyakus\web\widgets as Widget;
                 }
                 elseif ($field->type === 'boolean') {
 
-                    $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value,['uncheck' => 0]]).'<span class="ml-10">'.$field->title.'</span></label>';
+                    $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value,['uncheck' => 0]]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
                     echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,true);
 
                 }
@@ -138,7 +138,7 @@ use kilyakus\web\widgets as Widget;
 
                     }else{
 
-                        $html = '<label class="d-flex align-items-center m-0 p-2">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value]).'<span class="ml-10">'.$field->title.'</span></label>';
+                        $html = '<label class="d-flex align-items-center m-0 p-2">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
                         echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,false);
 
                     }
@@ -156,7 +156,7 @@ use kilyakus\web\widgets as Widget;
 
                         $value = !empty($data->{$parent->name}) ? $data->{$parent->name} : null;
                         $checked = $value && $field->title == $value[0];
-                        $html = '<label class="d-flex align-items-center m-0 p-2">'. Html::radio("Data[{$parent->name}][]", $checked, ['class' => 'switch','value' => $field->title]).'<span class="ml-10">'.$field->title.'</span></label>';
+                        $html = '<label class="d-flex align-items-center m-0 p-2">'. Html::radio("Data[{$parent->name}][]", $checked, ['class' => 'switch','value' => Yii::t('easyii', $field->title)]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
                         echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,false);
 
                     }

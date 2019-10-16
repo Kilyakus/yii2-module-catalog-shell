@@ -158,6 +158,10 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
         if (parent::beforeSave($insert)) {
 
+            if($this->module->settings['parentSubmodule']){
+                $this->parent_class = $this->module->settings['parentSubmodule'];
+            }
+
             if(!$this->data || (!is_object($this->data) && !is_array($this->data))){
                 $this->data = new \stdClass();
             }
