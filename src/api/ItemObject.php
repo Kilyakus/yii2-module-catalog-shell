@@ -50,6 +50,7 @@ class ItemObject extends \bin\admin\components\ApiObject
     private $_webcams;
     private $_nearby;
     private $_members;
+    private $_favorites;
 
     public function init()
     {
@@ -280,11 +281,20 @@ class ItemObject extends \bin\admin\components\ApiObject
     {
         foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
-        $favorites = ArrayHelper::getColumn($Favorite::find()->where(['item_id' => $this->id])->all(),'user_id');
+        $favorites = $Favorite::findAll(['item_id' => $this->id]);
 
-        $this->_members = User::findAll($favorites);
+        $this->_members = User::findAll(ArrayHelper::getColumn($favorites,'user_id'));
 
         return $this->_members;
+    }
+
+    public function getFavorites()
+    {
+        foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+        $this->_favorites[] = $Favorite::findAll(['item_id' => $this->id]);
+
+        return $this->_favorites;
     }
 
     public function getLatitude(){
