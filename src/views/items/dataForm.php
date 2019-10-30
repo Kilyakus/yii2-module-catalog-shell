@@ -16,7 +16,7 @@ use kilyakus\web\widgets as Widget;
 <?php endif; ?>
 <?php if(count($fields)) : ?>
     <?php foreach ($fields as $key => $field) : ?>
-        <?php if(count($field->children)) : ?>
+        <?php if($field->children(1)->andFilterWhere($filter)->count()) : ?>
             <?php if(!$field->parent) : ?>
 
                 <?php Widget\Portlet::begin([
@@ -38,7 +38,7 @@ use kilyakus\web\widgets as Widget;
 
             <?php endif; ?>
                 <div class="row">
-                    <?= $this->render('dataForm',['fields' => $field->children, 'data' => $data]) ?>
+                    <?= $this->render('dataForm',['fields' => $field->children(1)->andFilterWhere($filter)->orderBy(['order_num' => SORT_DESC])->all(), 'data' => $data, 'filter' => $filter]) ?>
                 </div>
 
             <?php if(!$field->parent) : ?>
@@ -106,7 +106,7 @@ use kilyakus\web\widgets as Widget;
                     if($field->options){
                         $options = ['' => Yii::t('easyii/' . $this->context->moduleName, 'Select')];
                         foreach(explode(',',$field->options) as $option){
-                            $options[\yii\helpers\Inflector::slug($option)] = $option;
+                            $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
                         $html = Widget\Select2::widget([
                             // 'addon' => ['prepend' => ['content' => Html::img(Image::thumb($field->image,60,60))]],
@@ -130,7 +130,7 @@ use kilyakus\web\widgets as Widget;
                         // }
                         // echo self::genContainer($options,$field,false);
                         foreach(explode(',',$field->options) as $option){
-                            $options[\yii\helpers\Inflector::slug($option)] = $option;
+                            $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
 
                         $html = Widget\Select2::widget(['id' => $field->name . '-' . $field->field_id, 'name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'options' => ['multiple' => true], 'pluginOptions' => ['class' => 'form-control', 'closeOnSelect' => false]]);

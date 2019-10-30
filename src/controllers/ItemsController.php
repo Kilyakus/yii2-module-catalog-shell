@@ -311,7 +311,7 @@ class ItemsController extends \bin\admin\components\Controller
                 'categories' => $model->categories,
                 'assign' => $this->getCategories($id),
                 'breadcrumbs' => $this->getBreadcrumbs($id),
-                'dataForm' => $this->generateForm(CField::tree($this->getCategories($id),get_class(new $categoryClass),1), $model->data),
+                'dataForm' => $this->generateForm($this->getCategories($id), $model->data),
                 'link' => $this->generateLink($model),
                 'parent' => $parent,
                 'class' => $class,
@@ -602,11 +602,16 @@ class ItemsController extends \bin\admin\components\Controller
         return $return;
     }
 
-    public function generateForm($fields, $data = null)
+    public function generateForm($categories, $data = null)
     {
-        if(API::getModule($this->moduleName)->settings['enableCategory'] && count($fields)){
+        $categoryClass = $this->categoryClass;
+
+        if(API::getModule($this->moduleName)->settings['enableCategory'] && count($categories)){
             // return self::getFields($fields,$data);
-            return parent::renderPartial('@kilyakus/shell/directory/views/items/dataForm',['fields' => $fields,'data' => $data]);
+            $filter = ['category_id' => $categories, 'class' => get_class(new $categoryClass), 'status' => 1];
+            $fields = CField::find()->where(['and',$filter, ['depth' => 0]])->orderBy(['order_num' => SORT_DESC])->all();
+
+            return parent::renderPartial('@kilyakus/shell/directory/views/items/dataForm',['fields' => $fields, 'filter' => $filter, 'data' => $data]);
         }else{
             return false;
         }
