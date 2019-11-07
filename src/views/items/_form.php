@@ -18,7 +18,7 @@ use bin\admin\helpers\IpHelper;
 use bin\admin\widgets\Redactor;
 use bin\admin\widgets\TagsInput;
 use bin\admin\widgets\SeoForm;
-use bin\admin\widgets\TranslateForm;
+use kilyakus\package\translate\widgets\TranslateForm;
 use kilyakus\modules\models\Setting;
 
 use kilyakus\shell\directory\assets\FieldsAsset;

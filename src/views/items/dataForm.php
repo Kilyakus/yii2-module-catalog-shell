@@ -16,8 +16,8 @@ use kilyakus\web\widgets as Widget;
 <?php endif; ?>
 <?php if(count($fields)) : ?>
     <?php foreach ($fields as $key => $field) : ?>
-        <?php if($field->children(1)->andFilterWhere($filter)->count()) : ?>
-            <?php if(!$field->parent) : ?>
+        <?php if($field->children(1)->andFilterWhere($filter)->orderBy(['order_num' => SORT_DESC])->count()) : ?>
+            <?php if(!$field->parents(1)->one()) : ?>
 
                 <?php Widget\Portlet::begin([
                     'title' => Yii::t('easyii', $field->title),
@@ -38,10 +38,10 @@ use kilyakus\web\widgets as Widget;
 
             <?php endif; ?>
                 <div class="row">
-                    <?= $this->render('dataForm',['fields' => $field->children(1)->andFilterWhere($filter)->orderBy(['order_num' => SORT_DESC])->all(), 'data' => $data, 'filter' => $filter]) ?>
+                    <?= $this->render('dataForm',['fields' => $field->children(1)->andFilterWhere($filter)->orderBy(['lft' => $field->lft, 'rgt' => $field->rgt])->all(), 'data' => $data, 'filter' => $filter]) ?>
                 </div>
 
-            <?php if(!$field->parent) : ?>
+            <?php if(!$field->parents(1)->one()) : ?>
 
                 <?php Widget\Portlet::end(); ?>
 
@@ -54,7 +54,7 @@ use kilyakus\web\widgets as Widget;
 
         <?php else: ?>
 
-            <?php if(!$field->parent) : ?>
+            <?php if(!$field->parents(1)->one()) : ?>
 
                 <!-- <div class="row"> -->
 
@@ -164,7 +164,7 @@ use kilyakus\web\widgets as Widget;
             
             </div>
 
-            <?php if(!$field->parent) : ?>
+            <?php if(!$field->parents(1)->one()) : ?>
                 
                 <!-- </div> -->
 
