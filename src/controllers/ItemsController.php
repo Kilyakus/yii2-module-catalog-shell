@@ -219,18 +219,11 @@ class ItemsController extends \bin\admin\components\Controller
             }
         }
         else {
-
-            $dataForm = [];
-            foreach (CField::tree($categories,get_class(new $categoryClass)) as $key => $data) {
-                $dataForm[] = (array)$data;
-            }
-
-            usort($dataForm, function($a, $b){
-                return ($a['category_id'] - $b['category_id']);
-            });
-
-            foreach ($dataForm as $key => $data) {
-                $dataForm[$key] = (object)$data;
+            $cats = [];
+            if($categories){
+                foreach ($categories as $key => $cat) {
+                    $cats[] = $cat->category_id;
+                }
             }
 
             return $this->rendering('create', [
@@ -239,7 +232,7 @@ class ItemsController extends \bin\admin\components\Controller
                 'categories' => self::getCategories(),
                 'assign' => $category->category_id,
                 'breadcrumbs' => self::getBreadcrumbs($id),
-                'dataForm' => $this->generateForm($dataForm),
+                'dataForm' => self::getItemFields($cats),
                 'link' => self::generateLink($model),
                 'parent' => $parent,
                 'class' => $class,
@@ -311,11 +304,40 @@ class ItemsController extends \bin\admin\components\Controller
                 'categories' => $model->categories,
                 'assign' => $this->getCategories($id),
                 'breadcrumbs' => $this->getBreadcrumbs($id),
-                'dataForm' => $this->generateForm($this->getCategories($id), $model->data),
+                'dataForm' => self::getItemFields($this->getCategories($id), $model->data),
                 'link' => $this->generateLink($model),
                 'parent' => $parent,
                 'class' => $class,
             ]);
+        }
+    }
+
+    protected function getItemFields($categories, $data = null)
+    {
+        $fields = [];
+
+        if(API::getModule($this->moduleName)->settings['enableCategory'] && count($categories)){
+
+            $filter = ['category_id' => $categories, 'class' => get_class(new $this->categoryClass), 'status' => 1];
+
+            foreach (CField::find()->where(['and',$filter,['depth' => 0]])->orderBy(['order_num' => SORT_DESC])->all() as $field) {
+                $fields[] = $field;
+            }
+
+            usort($fields, function($a, $b){
+                return ($a['category_id'] - $b['category_id']);
+            });
+
+            foreach ($fields as $key => $field) {
+                $fields[$key] = $field;
+            }
+
+            return $this->renderPartial('@kilyakus/shell/directory/views/items/dataForm', ['fields' => $fields, 'filter' => $filter, 'data' => $data]);
+
+        }else{
+
+            return false;
+
         }
     }
 
@@ -602,75 +624,6 @@ class ItemsController extends \bin\admin\components\Controller
         return $return;
     }
 
-    public function generateForm($categories, $data = null)
-    {
-        $categoryClass = $this->categoryClass;
-
-        if(API::getModule($this->moduleName)->settings['enableCategory'] && count($categories)){
-            // return self::getFields($fields,$data);
-            $filter = ['category_id' => $categories, 'class' => get_class(new $categoryClass), 'status' => 1];
-            $fields = CField::find()->where(['and',$filter, ['depth' => 0]])->orderBy(['order_num' => SORT_DESC])->all();
-
-            return parent::renderPartial('@kilyakus/shell/directory/views/items/dataForm',['fields' => $fields, 'filter' => $filter, 'data' => $data]);
-        }else{
-            return false;
-        }
-    }
-
-    public function getFields($fields = null, $data = null, $parent = null)
-    {
-        $result = '';
-
-        foreach($fields as $field)
-        {
-            if($field->children){
-                $result .= self::getGroup($field->children,$data,$field);
-            }else{
-                $result .= self::getItems($field->children,$data,$field);
-            }
-        }
-        return $result;
-    }
-
-    public function getGroup($children = null,$data = null,$field = null){
-
-        $parent = CField::findOne($field->parent);
-
-        if($field->type == 'table' || $parent->type == 'table'){
-            $options = '';
-            foreach (explode(',',$field->options) as $key => $option) {
-                $options .= '<th>'.$option.'</th>';
-            }
-            $result .= '<table class="table table-hover table-bordered">'.
-            '<thead><tr><th width="250" style="border-bottom:0px;">'.Yii::t('easyii',$field->title).'</th>'.$options.'</tr></thead>'.
-            '<tbody>'.
-            self::getFields($field->children,$data,$field).
-            '</tbody>'.
-            '</table>';
-        }else{
-            $result = '';
-            $result .= !$field->parent ? '<div class="panel panel-default border">' : '<div class="form-group w-12 pull-left border-bottom border-darkgray"><div class="col-xs-12">';
-            $result .= self::genHead($field);
-            $result .= !$field->parent ? '<div id="collapse-'.$field->name.'" class="panel-body panel-collapse collapse in" role="tabpanel" aria-labelledby="collapse-'.$field->name.'">' : '';
-            $result .= '<div class="row">';
-            $result .= self::getFields($children,$data,$field);
-            $result .= '</div>';
-            $result .= '</div>';
-            $result .= '</div>';
-        }
-        return $result;
-    }
-
-    public function genHead($field){
-
-        $result .= !$field->parent 
-            ? '<div class="panel-heading" role="tab" id="category-'.$field->name.'"><div class="panel-title"><a data-toggle="collapse" href="#collapse-'.$field->name.'" aria-expanded="true" aria-controls="collapse-'.$field->name.'" class="pull-right toggle"><div class="close-block"></div></a>'. Yii::t('easyii', $field->title) .'</div></div>' 
-            : '<label for="data-'.$field->name.'">'. Yii::t('easyii', $field->title) .'</label>';
-
-        return $result;
-
-    }
-
     public function genContainer($html = null,$field = null,$label = true,$image = true){
 
         if($label != false){
@@ -698,185 +651,5 @@ class ItemsController extends \bin\admin\components\Controller
         }else{
             return $label.$html;
         }
-    }
-
-    public function table($field){
-        
-        if($field->type == 'table'){
-            return true;
-        }else{
-            if(isset($field->parent)){
-                return self::table(CField::findOne($field->parent));
-            }else{
-                return false;
-            }
-        }
-    }
-
-    public function getItems($children = null,$data = null,$field = null)
-    {
-        $itemClass = $this->itemClass;
-
-        $category_id = $itemClass::findOne(Yii::$app->controller->action->controller->actionParams['id'])->category_id;
-
-        $alert = '<a href="'.Url::toRoute('/admin/catalog/a/fields/'.$category_id).'" target="_blank">'.Yii::t('easyii','You have not created options, please go to the field settings section').'</a>';
-
-        $parent = CField::findOne($field->parent);
-
-        $value = !empty($data->{$field->name}) ? $data->{$field->name} : null;
-        $result .= $parent ? '<div class="form-group col-xs-12 col-md-6">' : '<div class="form-group">';
-        if ($field->type === 'string' && self::table($field) != true) {
-
-            $settings = ['id' => 'data-'.$field->name,'class' => 'form-control'];
-            if($field->required == true){
-                $settings = array_merge($settings,['required' => true]);
-            }
-            $html = Html::input('text', "Data[{$field->name}]", $value, $settings);
-            $result .= self::genContainer($html,$field,true);
-
-        }
-        elseif ($field->type === 'integer' && ItemsController::table($field) != true) {
-
-            $settings = ['id' => 'data-'.$field->name,'class' => 'form-control input-lg','min' => $field->min,'max' => $field->max, 'step' => ($field->step == 1 ? 'any' : $field->step)];
-            if($field->required == true){
-                $settings = array_merge($settings,['required' => true]);
-            }
-            $html = Html::input('number',"Data[{$field->name}]", $value, $settings);
-            $result .= ItemsController::genContainer($html,$field,true);
-
-        }
-        elseif ($field->type === 'text' && self::table($field) != true) {
-
-            $settings = ['id' => 'data-'.$field->name,'class' => 'form-control'];
-            if($field->required == true){
-                $settings = array_merge($settings,['required' => true]);
-            }
-
-            $html = Html::textarea("Data[{$field->name}]", $value, $settings);
-            $result .= self::genContainer($html,$field,true);
-
-        }
-        elseif ($field->type === 'boolean' && self::table($field) != true) {
-
-            $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value,['uncheck' => 0]]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
-            $result .= self::genContainer($html,$field,true);
-
-        }
-        elseif ($field->type === 'select' && self::table($field) != true) {
-            if($field->options){
-                $options = ['' => Yii::t('easyii/' . $this->moduleName, 'Select')];
-                foreach(explode(',',$field->options) as $option){
-                    $options[\yii\helpers\Inflector::slug($option)] = $option;
-                }
-                $html = Select2::widget(['id' => $field->name . '-' . $field->field_id, 'name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'pluginOptions' => ['class' => 'form-control']]);
-                $result .= self::genContainer($html,$field,true);
-
-            }else{
-
-                $result .= self::genContainer($alert,$field,true);
-
-            }
-        }
-        elseif ($field->type === 'checkbox' && self::table($field) != true) {
-            $options = '';
-            if($field->options){
-
-                // foreach(explode(',',$field->options) as $option){
-                //     $checked = $value && (is_array($value) ? in_array($option, $value) : \yii\helpers\Inflector::slug($option) == $value);
-                //     $options .= '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $checked, ['class' => 'switch','value' => $option,]) .'<span class="ml-10">'. $option .'</span></label>';
-                // }
-                // $result .= self::genContainer($options,$field,false);
-                foreach(explode(',',$field->options) as $option){
-                    $options[\yii\helpers\Inflector::slug($option)] = $option;
-                }
-
-                $html = Select2::widget(['id' => $field->name . '-' . $field->field_id, 'name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'options' => ['multiple' => true], 'pluginOptions' => ['class' => 'form-control', 'closeOnSelect' => false]]);
-                $result .= self::genContainer($html,$field,true);
-
-            }else{
-
-                $html = '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $value, ['class' => 'switch','value' => $value]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
-                $result .= self::genContainer($html,$field,false);
-
-            }
-        }
-        elseif ($field->type === 'radio' && self::table($field) != true) {
-            if($field->options){
-
-                foreach(explode(',',$field->options) as $option){
-                    $checked = $value && (is_array($value) ? in_array($option, $value) : \yii\helpers\Inflector::slug($option) == $value);
-                    $options .= '<label class="v-align mt-10">'. Html::radio("Data[{$field->name}][]", $checked, ['class' => 'switch','value' => $option,]) .'<span class="ml-10">'. $option .'</span></label>';
-                }
-                $result .= self::genContainer($options,$field,true);
-
-            }else{
-
-                $value = !empty($data->{$parent->name}) ? $data->{$parent->name} : null;
-                $checked = $value && $field->title == $value[0];
-                $html = '<label class="v-align mt-10">'. Html::radio("Data[{$parent->name}][]", $checked, ['class' => 'switch','value' => Yii::t('easyii', $field->title)]).'<span class="ml-10">'.Yii::t('easyii', $field->title).'</span></label>';
-                $result .= self::genContainer($html,$field,false);
-
-            }
-        }
-        elseif ($field->type === 'table' || self::table($field) == true) {
-            $options = '';
-            foreach (explode(',',$parent->options) as $option) {
-                if($field->children){
-
-                }else{
-
-                    $value = !empty($data->{$option.'-'.$field->name}) ? $data->{$option.'-'.$field->name} : null;
-
-                    $foptions = '';
-                    if($field->options && !count($field->children)){
-                        if ($field->type === 'string') {
-
-                            $html = Html::input('text', 'Data['.$option.'-'.$field->name.']', $value, ['id' => 'data-'.$option.'-'.$field->name,'class' => 'form-control']);
-
-                        }elseif($field->type === 'text') {
-
-                            $html = Html::textarea("Data['.$option.'-'.$field->name.']", $value, ['id' => 'data-'.$option.'-'.$field->name,'class' => 'form-control']);
-
-                        }elseif($field->type === 'boolean') {
-
-                            $html = Html::checkbox('Data['.$option.'-'.$field->name.'][]', $value, ['class' => 'switch','value' => $value,['uncheck' => 0]]);
-
-                        }elseif($field->type == 'select'){
-                            $foptions = ['' => Yii::t('easyii/' . $this->moduleName, 'Clear')];
-                            foreach(explode(',',$field->options) as $foption){
-                                $foptions[\yii\helpers\Inflector::slug($foption)] = $foption;
-                            }
-                            $html = '<select name="Data['.$option.'-'.$field->name.']" class="form-control">'. Html::renderSelectOptions($value, $foptions) .'</select>';
-
-                        }elseif($field->type === 'checkbox') {
-                            $foptions = '';
-                            foreach(explode(',',$field->options) as $foption){
-                                $checked = $value && in_array($foption, $value);
-                                $foptions .= '<label class="v-align mt-10">'. Html::checkbox('Data['.$option.'-'.$field->name.'][]', $checked, ['class' => 'switch','value' => $foption,]) .'<span class="ml-10">'. $foption .'</span></label>';
-                            }
-                            $html = $foptions;
-
-                        }elseif($field->type === 'radio') {
-                            $foptions = '';
-                            foreach(explode(',',$field->options) as $foption){
-                                $checked = $value && in_array($foption, $value);
-                                $foptions .= '<label class="v-align mt-10">'. Html::radio('Data['.$option.'-'.$field->name.'][]', $checked, ['class' => 'switch','value' => $foption,]) .'<span class="ml-10">'. $foption .'</span></label>';
-                            }
-                            $html = $foptions;
-
-                        }else{
-                            $html = 'in process';
-                        }
-                        $options .= '<td>'.self::genContainer($html,$field,false,false).'</td>';
-                    }else{
-                        $options = '<td colspan="'.count(explode(',',$parent->options)).'">'.$alert.'</td>';
-                    }
-                }
-            }
-
-            $result .= '<tr><td>'.self::genContainer($field->title,$field,false).'</td>'.$options.'</tr>';
-        }
-        $result .= '</div>';
-        return $result;
     }
 }

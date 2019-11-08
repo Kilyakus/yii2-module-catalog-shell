@@ -108,15 +108,13 @@ use kilyakus\web\widgets as Widget;
                         foreach(explode(',',$field->options) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
-                        $html = Widget\Select2::widget([
-                            // 'addon' => ['prepend' => ['content' => Html::img(Image::thumb($field->image,60,60))]],
-                            'id' => $field->name . '-' . $field->field_id, 'name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'pluginOptions' => ['class' => 'form-control']
-                        ]);
+
+                        $html = Widget\Select2::widget(['name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'options' => ['multiple' => false], 'pluginOptions' => ['class' => 'form-control', 'closeOnSelect' => true, 'allowClear' => true]]);
                         echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,true);
 
                     }else{
 
-                        echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($alert,$field,true);
+                        echo \kilyakus\shell\directory\controllers\ItemsController::genContainer('',$field,true);
 
                     }
                 }
@@ -124,16 +122,11 @@ use kilyakus\web\widgets as Widget;
                     $options = '';
                     if($field->options){
 
-                        // foreach(explode(',',$field->options) as $option){
-                        //     $checked = $value && (is_array($value) ? in_array($option, $value) : \yii\helpers\Inflector::slug($option) == $value);
-                        //     $options .= '<label class="v-align mt-10">'. Html::checkbox("Data[{$field->name}][]", $checked, ['class' => 'switch','value' => $option,]) .'<span class="ml-10">'. $option .'</span></label>';
-                        // }
-                        // echo self::genContainer($options,$field,false);
                         foreach(explode(',',$field->options) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
 
-                        $html = Widget\Select2::widget(['id' => $field->name . '-' . $field->field_id, 'name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'options' => ['multiple' => true], 'pluginOptions' => ['class' => 'form-control', 'closeOnSelect' => false]]);
+                        $html = Widget\Select2::widget(['name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'options' => ['multiple' => true], 'pluginOptions' => ['class' => 'form-control', 'closeOnSelect' => false, 'allowClear' => true]]);
                         echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,true);
 
                     }else{
