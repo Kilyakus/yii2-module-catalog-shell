@@ -15,6 +15,7 @@ use kilyakus\modules\behaviors\StatusController;
 use bin\admin\behaviors\SortableDateController;
 use bin\admin\models\Season;
 use bin\admin\models\CField;
+use bin\admin\models\Photo;
 use kilyakus\web\widgets\Select2;
 
 class ItemsController extends \bin\admin\components\Controller
@@ -46,6 +47,15 @@ class ItemsController extends \bin\admin\components\Controller
                         'roles' => ['@'],
                     ],
                 ],
+            ],
+        ];
+    }
+
+    public function actions()
+    {
+        return [
+            'upload' => [
+                'class' => 'bin\admin\actions\UploadAction',
             ],
         ];
     }
@@ -91,6 +101,11 @@ class ItemsController extends \bin\admin\components\Controller
 
         if(Yii::$app->request->post()){
 
+            if(Yii::$app->request->post('hasEditable'))
+            {
+                return self::update();
+            }
+
             $item = Yii::$app->request->post('Item');
 
             if(!$chat = $chatClass::find()->where(['item_id' => $item['item_id']])->one()){
@@ -112,15 +127,20 @@ class ItemsController extends \bin\admin\components\Controller
 
         $query = ['item_id' => $categoryAssign::findAll(['category_id' => $id])];
 
-        if($class){
-            $query['parent_class'] = 'bin\admin\modules\\' . $class . '\models\Item';
-        }
+        // if($class){
+        //     $query['parent_class'] = 'bin\admin\modules\\' . $class . '\models\Item';
+        // }
 
-        if($parent){
-            $query['parent_id'] = $parent;
-        }
+        // if($parent){
+        //     $query['parent_id'] = $parent;
+        // }
         
         // $items = $itemClass::find()->where($query)->orderBy(['status' => SORT_ASC])->all();
+
+        $searchModel  = \Yii::createObject($itemClass::className());
+        $dataProvider = $searchModel->search(\Yii::$app->request->get());
+        $dataProvider->query->andWhere($query);
+        $dataProvider->pagination->pageSize = Yii::$app->session->get('per-page', 20);
 
         $data = new ActiveDataProvider([
             'query' => $itemClass::find()->where($query)->orderBy(['status' => SORT_ASC, 'item_id' => SORT_DESC]),
@@ -128,8 +148,10 @@ class ItemsController extends \bin\admin\components\Controller
 
         $items = $data->models;
         
-        return $this->rendering('index', [
+        return $this->render('@kilyakus/shell/directory/views/items/index', [
             'data' => $data,
+            'dataProvider' => $dataProvider,
+            'searchModel' => $searchModel,
             'model' => $model,
             'items' => $items,
             'breadcrumbs' => self::getBreadcrumbs($id),
@@ -137,6 +159,49 @@ class ItemsController extends \bin\admin\components\Controller
             'class' => $class,
         ]);
     }
+
+    // public function actionUpload($class, $item_id = null)
+    // {
+    //     $success = null;
+
+    //     $photo = new Photo;
+    //     $photo->class = $class;
+    //     if($item_id){
+    //         $photo->item_id = $item_id;
+    //     }
+    //     $photo->created_at = Yii::$app->user->identity->id;
+    //     $photo->image = UploadedFile::getInstance($photo, 'image');
+
+    //     if($photo->image && $photo->validate(['image'])){
+    //         $photo->image = Image::upload($photo->image, 'photos', Photo::PHOTO_MAX_WIDTH);
+
+    //         if($photo->image){
+    //             if($photo->save()){
+    //                 $success = [
+    //                     'message' => Yii::t('easyii', 'Photo uploaded'),
+    //                     'photo' => [
+    //                         'id' => $photo->primaryKey,
+    //                         'image' => $photo->image,
+    //                         'thumb' => Image::thumb($photo->image, Photo::PHOTO_THUMB_WIDTH, Photo::PHOTO_THUMB_HEIGHT),
+    //                         'description' => ''
+    //                     ]
+    //                 ];
+    //             }
+    //             else{
+    //                 @unlink(Yii::getAlias('@webroot') . str_replace(Url::base(true), '', $photo->image));
+    //                 $this->error = Yii::t('easyii', 'Create error. {0}', $photo->formatErrors());
+    //             }
+    //         }
+    //         else{
+    //             $this->error = Yii::t('easyii', 'File upload error. Check uploads folder for write permissions');
+    //         }
+    //     }
+    //     else{
+    //         $this->error = Yii::t('easyii', 'File is incorrect');
+    //     }
+
+    //     return $this->formatResponse($success);
+    // }
 
     public function actionItemsList($q = null, $id = null) {
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -172,6 +237,10 @@ class ItemsController extends \bin\admin\components\Controller
         }
 
         $model = new $itemClass;
+
+        if($_FILES['Photo']){
+            return Yii::$app->runAction(Yii::$app->controller->module->module->id.'/'.Yii::$app->controller->module->id.'/'.Yii::$app->controller->id.'/upload', ['class' => $itemClass]);
+        }
 
         $parents = $categoryClass::getParents($id) ? ArrayHelper::getColumn($categoryClass::getParents($id),'category_id') : [];
 
@@ -251,6 +320,10 @@ class ItemsController extends \bin\admin\components\Controller
         }
 
         $categories = $categoryClass::find()->where(['category_id' => $this->getCategories($id)])->all();
+
+        if($_FILES['Photo']){
+            return Yii::$app->runAction(Yii::$app->controller->module->module->id.'/'.Yii::$app->controller->module->id.'/'.Yii::$app->controller->id.'/upload', ['class' => $itemClass, 'item_id' => $model->primaryKey]);
+        }
         
         if ($model->load(Yii::$app->request->post())) {
 
@@ -309,6 +382,43 @@ class ItemsController extends \bin\admin\components\Controller
                 'parent' => $parent,
                 'class' => $class,
             ]);
+        }
+    }
+
+    public function update()
+    {
+        $itemClass = $this->itemClass;
+
+        $post = Yii::$app->request->post();
+        $key = $post['editableKey'];
+        $index = $post['editableIndex'];
+        $attribute = $post['editableAttribute'];
+        $attributes = $post['Item'];
+        $model = $itemClass::findOne($key);
+
+        if (isset($post['hasEditable'])) {
+
+            \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+            if ($model->load($post)) {
+
+                $model->{$attribute} = $attributes[$index][$attribute];
+                $model->update();
+
+                $success = [
+                    'message' => Yii::t('easyii', 'Update success'),
+                    'output' => [
+                        $attribute => $model->{$attribute},
+                    ]
+                ];
+            }
+            else {
+
+                $this->error = Yii::t('easyii', 'Update error. {0}', $model->formatErrors());
+
+            }
+
+            return $this->formatResponse($success);
         }
     }
 

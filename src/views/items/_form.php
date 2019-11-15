@@ -102,9 +102,17 @@ if(count($model->category->types)){
 <?php endif; ?>
 
 <?php if($settings['itemThumb']) : ?>
-    <?= $form->field($model, 'image')->widget(Widget\Cutter::className(), []) ?>
-    <?= $form->field($model, 'preview')->widget(Widget\Cutter::className(), []) ?>
+    <div class="row">
+        <div class="col-xs-12 col-sm-3 col-md-five">
+            <?= $form->field($model, 'image')->widget(Widget\Cutter::className(), []) ?>
+        </div>
+        <div class="col-xs-12 col-sm-3 col-md-five">
+            <?= $form->field($model, 'preview')->widget(Widget\Cutter::className(), []) ?>
+        </div>
+    </div>
 <?php endif; ?>
+
+<?= \bin\admin\widgets\ModulePhotos\ModulePhotos::widget(['model' => $model])?>
 
 <?php if($settings['enableMaps']) : ?>
     <div class="row">

@@ -2,6 +2,7 @@
 namespace kilyakus\shell\directory\models;
 
 use Yii;
+use bin\admin\components\API;
 use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
 use yii\behaviors\SluggableBehavior;
@@ -14,10 +15,13 @@ use bin\admin\models\Video;
 use bin\admin\models\Comment;
 use bin\admin\models\CType;
 use bin\admin\models\User;
+use yii\data\ActiveDataProvider;
 
 class Item extends \kilyakus\modules\components\ActiveRecord
 {
     public $transferClasses = [];
+
+    public $module;
 
     const STATUS_OFF = 0;
     const STATUS_ON = 1;
@@ -31,6 +35,29 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
     public function init()
     {
+        $this->module = API::getModule($this::MODULE_NAME);
+
+        // $inflexive = str_replace('/', '\\', $_SERVER['DOCUMENT_ROOT'] . '/');
+        // $throwaway = str_replace($inflexive, '',__DIR__);
+        // $makeready = explode('\\',$throwaway);
+        // $penetrate = [];
+        // foreach ($makeready as $name) {
+        //     if($name == $this->module->name) break;
+        //     $penetrate[] = $name;
+        // }
+        // $moduleDirectory = implode('\\',$penetrate) . '\\';
+
+        $moduleDirectory = 'bin\admin\modules\\';
+
+        foreach ($this->transferClasses as $group => $items) {
+            if(is_array($items)){
+                foreach ($items as $class) {
+                    self::put($class);
+                    $this->{$class} = $moduleDirectory . $this->module->name . '\\' . $group . '\\' . $class;
+                }
+            }
+        }
+
         parent::init();
     }
 
@@ -85,6 +112,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
         return [
             'parent_class' => Yii::t('easyii', 'Module'),
 
+            'category_id' => Yii::t('easyii', 'Category'),
             'title' => Yii::t('easyii', 'Title'),
             'preview' => Yii::t('easyii', 'Change main photo'),
             'image' => Yii::t('easyii', 'Upload background and main photo'),
@@ -424,5 +452,29 @@ class Item extends \kilyakus\modules\components\ActiveRecord
     //         return ($a['category_id'] - $b['category_id']);
     //     });
         return $fields;
+    }
+
+    public function search($params)
+    {
+        $query = static::find();
+
+        $dataProvider = new ActiveDataProvider(['query' => $query]);
+        $dataProvider->sort->defaultOrder = ['status' => SORT_ASC, 'item_id' => SORT_DESC];
+        $dataProvider->pagination->pageSize = Yii::$app->session->get('per-page', 20);
+
+
+        if (!($this->load($params))) {
+            return $dataProvider;
+        }
+
+        $dataProvider->query
+            ->andFilterWhere(['like', 'title', $this->title])
+            ->andFilterWhere(['like', 'description', $this->description])
+            ->andFilterWhere(['created_by' => $this->created_by])
+            ->andFilterWhere(['updated_by' => $this->updated_by])
+            ->andFilterWhere(['owner' => $this->owner])
+            ->andFilterWhere(['status' => $this->status]);
+
+        return $dataProvider;
     }
 }
