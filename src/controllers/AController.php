@@ -7,7 +7,7 @@ use yii\web\Response;
 use yii\helpers\ArrayHelper;
 use bin\admin\models\CField;
 use bin\admin\models\Photo;
-use bin\admin\helpers\Image;
+use kilyakus\imageprocessor\Image;
 use bin\forum\src\models\Category as ForumCategory;
 use bin\forum\src\models\Forum;
 

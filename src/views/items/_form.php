@@ -6,25 +6,23 @@ use yii\helpers\ArrayHelper;
 use yii\widgets\Pjax;
 use yii\widgets\ActiveForm;
 
-use kartik\file\FileInput;
 use kartik\daterange\DateRangePicker;
 
 use kilyakus\web\widgets as Widget;
 
 use kilyakus\widget\maps\GoogleMaps;
 use bin\admin\components\API;
-use bin\admin\helpers\Image;
+use kilyakus\imageprocessor\Image;
 use bin\admin\helpers\IpHelper;
-use bin\admin\widgets\Redactor;
 use bin\admin\widgets\TagsInput;
-use bin\admin\widgets\SeoForm;
+use kilyakus\package\seo\widgets\SeoForm;
 use kilyakus\package\translate\widgets\TranslateForm;
 use kilyakus\modules\models\Setting;
 
 use kilyakus\shell\directory\assets\FieldsAsset;
 use bin\admin\modules\geo\api\Geo;
 
-\app\assets\ScrollbarAsset::register($this);
+// \app\assets\ScrollbarAsset::register($this);
 
 $this->registerAssetBundle(FieldsAsset::className());
 
@@ -112,7 +110,9 @@ if(count($model->category->types)){
     </div>
 <?php endif; ?>
 
-<?= \bin\admin\widgets\ModulePhotos\ModulePhotos::widget(['model' => $model])?>
+<?php if($settings['enablePhotos']) : ?>
+    <?= \bin\admin\widgets\ModulePhotos\ModulePhotos::widget(['model' => $model])?>
+<?php endif; ?>
 
 <?php if($settings['enableMaps']) : ?>
     <div class="row">
@@ -174,15 +174,11 @@ if(count($model->category->types)){
 
 <?= TranslateForm::widget(['form' => $form, 'model' => $model, 'attribute' => 'description']) ?>
 
-<div class="row" style="margin:0;">
-    <?php if(count($dataForm) == 1) : ?>
+<?php if(count($dataForm) == 1) : ?>
+    <div class="row" style="margin:0;">
         <?= $dataForm; ?>
-    <?php else: ?>
-        <?php foreach ($dataForm as $data) : ?>
-            <?= $data; ?>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</div>
+    </div>
+<?php endif; ?>
 
 <?php if($settings['itemSale']) : ?>
     <?= $form->field($model, 'available') ?>

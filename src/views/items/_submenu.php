@@ -40,12 +40,12 @@ foreach (Yii::$app->getModule('admin')->activeModules as $key => $activeModule) 
 			'active' => ($action === 'seasons'),
 			'visible' => $settings['enableSeasons'],
 		],
-		[
-			'label' => '<span class="fa fa-camera"></span>&nbsp; ' . Yii::t('easyii', 'Photos'),
-			'url' => Url::to(['/' . $module . '/' . $moduleName . '/items/photos', 'id' => $model->primaryKey]),
-			'active' => ($action === 'photos'),
-			'visible' => $settings['enablePhotos'],
-		],
+		// [
+		// 	'label' => '<span class="fa fa-camera"></span>&nbsp; ' . Yii::t('easyii', 'Photos'),
+		// 	'url' => Url::to(['/' . $module . '/' . $moduleName . '/items/photos', 'id' => $model->primaryKey]),
+		// 	'active' => ($action === 'photos'),
+		// 	'visible' => $settings['enablePhotos'],
+		// ],
 		[
 			'label' => '<span class="fa fa-film"></span>&nbsp; ' . Yii::t('easyii', 'Video'),
 			'url' => Url::to(['/' . $module . '/' . $moduleName . '/items/videos', 'id' => $model->primaryKey]),

@@ -6,8 +6,9 @@ use bin\admin\components\API;
 use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
 use yii\behaviors\SluggableBehavior;
-use bin\admin\behaviors\SeoBehavior;
-use bin\admin\behaviors\TranslateBehavior;
+use kilyakus\package\gui\behaviors\GuiBehavior;
+use kilyakus\package\seo\behaviors\SeoBehavior;
+use kilyakus\package\translate\behaviors\TranslateBehavior;
 use bin\admin\behaviors\Taggable;
 use kilyakus\cutter\behaviors\CutterBehavior;
 use bin\admin\models\Photo;
@@ -139,6 +140,12 @@ class Item extends \kilyakus\modules\components\ActiveRecord
     public function behaviors()
     {
         return [
+            'guiBehavior' => [
+                'class' => GuiBehavior::className(),
+                'model' => Photo::className(),
+                'isRoot' => IS_MODER,
+                'identity' => Yii::$app->user->identity->id,
+            ],
             'seoBehavior' => SeoBehavior::className(),
             'translateBehavior' => TranslateBehavior::className(),
             'taggabble' => Taggable::className(),

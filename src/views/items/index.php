@@ -5,7 +5,7 @@ use yii\helpers\ArrayHelper;
 use yii\widgets\ActiveForm;
 use bin\user\models\User;
 use bin\admin\modules\catalog\models\Item;
-use bin\admin\helpers\Image;
+use kilyakus\imageprocessor\Image;
 use bin\admin\modules\chat\models\Group;
 use kilyakus\web\widgets as Widget;
 use kilyakus\web\templates\UserCard\UserCard;

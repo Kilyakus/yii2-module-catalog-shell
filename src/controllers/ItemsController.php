@@ -51,15 +51,6 @@ class ItemsController extends \bin\admin\components\Controller
         ];
     }
 
-    public function actions()
-    {
-        return [
-            'upload' => [
-                'class' => 'bin\admin\actions\UploadAction',
-            ],
-        ];
-    }
-
     public function init()
     {
         parent::init();
@@ -238,10 +229,6 @@ class ItemsController extends \bin\admin\components\Controller
 
         $model = new $itemClass;
 
-        if($_FILES['Photo']){
-            return Yii::$app->runAction(Yii::$app->controller->module->module->id.'/'.Yii::$app->controller->module->id.'/'.Yii::$app->controller->id.'/upload', ['class' => $itemClass]);
-        }
-
         $parents = $categoryClass::getParents($id) ? ArrayHelper::getColumn($categoryClass::getParents($id),'category_id') : [];
 
         array_push($parents,$category->category_id);
@@ -321,10 +308,6 @@ class ItemsController extends \bin\admin\components\Controller
 
         $categories = $categoryClass::find()->where(['category_id' => $this->getCategories($id)])->all();
 
-        if($_FILES['Photo']){
-            return Yii::$app->runAction(Yii::$app->controller->module->module->id.'/'.Yii::$app->controller->module->id.'/'.Yii::$app->controller->id.'/upload', ['class' => $itemClass, 'item_id' => $model->primaryKey]);
-        }
-        
         if ($model->load(Yii::$app->request->post())) {
 
             $post = Yii::$app->request->post('Item');
