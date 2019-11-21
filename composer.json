@@ -13,6 +13,9 @@
         "kilyakus/yii2-helper-base": "*",
         "kilyakus/yii2-module-base": "*",
         "kilyakus/yii2-template-engine": "*",
+        "kilyakus/yii2-package-gui": "*",
+        "kilyakus/yii2-package-seo": "*",
+        "kilyakus/yii2-package-translate": "*",
         "kilyakus/yii2-widget-maps": "*"
     },
     "autoload": {
