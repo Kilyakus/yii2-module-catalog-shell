@@ -6,14 +6,15 @@ use bin\admin\components\API;
 use yii\helpers\Html;
 use yii\helpers\Url;
 
-class PhotoObject extends \bin\admin\components\ApiObject
+class PhotoObject extends \kilyakus\components\api\Object
 {
     public $moduleName;
     public $image;
+    public $title;
     public $description;
 
     public function box($width, $height){
-        $img = Html::img($this->thumb($width, $height));
+        $img = Html::img($this->thumb('image', $width, $height));
         $a = Html::a($img, $this->image, [
             'class' => 'easyii-box',
             'rel' => 'catalog-'.$this->model->item_id,

@@ -197,6 +197,13 @@ class Item extends \kilyakus\modules\components\ActiveRecord
                 $this->parent_class = $this->module->settings['parentSubmodule'];
             }
 
+            if($this->isNewRecord || !$this->created_by){
+
+                $this->created_by = Yii::$app->user->identity->id;
+            }
+
+            $this->updated_by = Yii::$app->user->identity->id;
+
             if(!$this->data || (!is_object($this->data) && !is_array($this->data))){
                 $this->data = new \stdClass();
             }
@@ -407,7 +414,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
     public function getPhotos()
     {
-        return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->sort();
+        return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
     }
 
     public function getVideos()

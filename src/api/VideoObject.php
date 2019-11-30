@@ -6,7 +6,7 @@ use bin\admin\components\API;
 use yii\helpers\Html;
 use yii\helpers\Url;
 
-class VideoObject extends \bin\admin\components\ApiObject
+class VideoObject extends \kilyakus\components\api\Object
 {
     public $moduleName;
     public $file;

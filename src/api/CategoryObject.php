@@ -7,7 +7,7 @@ use kilyakus\shell\directory\models\Item;
 use yii\helpers\Url;
 use yii\widgets\LinkPager;
 
-class CategoryObject extends \bin\admin\components\ApiObject
+class CategoryObject extends \kilyakus\components\api\Object
 {
     public $slug;
     public $icon;
@@ -21,6 +21,15 @@ class CategoryObject extends \bin\admin\components\ApiObject
 
     public function getTitle(){
         return LIVE_EDIT ? API::liveEdit($this->model->title, $this->editLink) : $this->model->title;
+    }
+
+    public function getParent(){
+        return $this->model->parent;
+    }
+    
+    public function getTranslate()
+    {
+        return $this->model->translate;
     }
 
     public function pages($options = []){

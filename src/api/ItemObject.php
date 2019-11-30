@@ -12,7 +12,7 @@ use bin\admin\models\Comment;
 use bin\admin\models\Season;
 use bin\admin\models\CType;
 
-class ItemObject extends \bin\admin\components\ApiObject
+class ItemObject extends \kilyakus\components\api\Object
 {
     public $transferClasses = [];
     public $moduleDir;
@@ -171,7 +171,7 @@ class ItemObject extends \bin\admin\components\ApiObject
         if(!$this->_photos){
             $this->_photos = [];
 
-            foreach(Photo::find()->where(['class' => $Item::className(), 'item_id' => $this->id])->sort()->all() as $model){
+            foreach(Photo::find()->where(['class' => $Item::className(), 'item_id' => $this->id])->all() as $model){
                 $this->_photos[] = new $PhotoObject($model,['module' => $this->moduleName]);
             }
         }

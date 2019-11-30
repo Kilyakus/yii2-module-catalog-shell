@@ -239,8 +239,6 @@ class ItemsController extends \bin\admin\components\Controller
 
             $model->category_id = $category->category_id;
 
-            $model->created_by = Yii::$app->user->identity->id;
-
             $model->data = Yii::$app->request->post('Data');
 
             $model->contacts = Yii::$app->request->post('Contacts');
@@ -321,12 +319,6 @@ class ItemsController extends \bin\admin\components\Controller
             if(Yii::$app->request->post('Contacts')){
                 $model->contacts = Yii::$app->request->post('Contacts');
             }
-
-            if(!$model->created_by){
-                $model->created_by = Yii::$app->user->identity->id;
-            }
-
-            $model->updated_by = Yii::$app->user->identity->id;
 
             if($this->module->module->id != 'admin'){
                 $model->status = $itemClass::STATUS_OFF;
@@ -590,7 +582,7 @@ class ItemsController extends \bin\admin\components\Controller
             }
         }
 
-        if($model->parent_class && $model->parent_class != ''){
+        if($model->parent_class && class_exists($model->parent_class) && $model->parent_class != ''){
             $parent = $model->parent_class;
             $list = $parent::find()->all();
             if ($parent != null && count($list) > 0) {
