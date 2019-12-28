@@ -71,6 +71,9 @@ use kilyakus\web\widgets as Widget;
                     if($field->required == true){
                         $settings = array_merge($settings,['required' => true]);
                     }
+                    if($field->append == true){
+                        $settings = array_merge($settings,['data-append' => true]);
+                    }
                     $html = Html::input('text', "Data[{$field->name}]", $value, $settings);
                     echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,true);
 
@@ -80,6 +83,9 @@ use kilyakus\web\widgets as Widget;
                     $settings = ['id' => 'data-'.$field->name,'class' => 'form-control input-lg','min' => $field->min,'max' => $field->max, 'step' => ($field->step == 1 ? 'any' : $field->step)];
                     if($field->required == true){
                         $settings = array_merge($settings,['required' => true]);
+                    }
+                    if($field->append == true){
+                        $settings = array_merge($settings,['data-append' => 'true']);
                     }
                     $html = Html::input('number',"Data[{$field->name}]", $value, $settings);
                     echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,true);

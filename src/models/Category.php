@@ -5,6 +5,8 @@ use Yii;
 use bin\admin\models\CField;
 use bin\admin\models\CType;
 use bin\admin\models\CContact;
+use bin\admin\models\Photo;
+use bin\admin\models\Video;
 
 class Category extends \bin\admin\models\CategoryModel
 {
@@ -140,6 +142,16 @@ class Category extends \bin\admin\models\CategoryModel
         });
 
         return $this->_contacts;
+    }
+
+    public function getPhotos()
+    {
+        return $this->hasMany(Photo::className(), ['item_id' => 'category_id'])->where(['class' => self::className()]);
+    }
+
+    public function getVideos()
+    {
+        return $this->hasMany(Video::className(), ['item_id' => 'category_id'])->where(['class' => self::className()]);
     }
 
     public function getCategories($context = null)

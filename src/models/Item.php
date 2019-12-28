@@ -9,7 +9,7 @@ use yii\behaviors\SluggableBehavior;
 use kilyakus\package\gui\behaviors\GuiBehavior;
 use kilyakus\package\seo\behaviors\SeoBehavior;
 use kilyakus\package\translate\behaviors\TranslateBehavior;
-use bin\admin\behaviors\Taggable;
+use kilyakus\package\taggable\behaviors\Taggable;
 use kilyakus\cutter\behaviors\CutterBehavior;
 use bin\admin\models\Photo;
 use bin\admin\models\Video;
@@ -77,7 +77,6 @@ class Item extends \kilyakus\modules\components\ActiveRecord
         $rules[] = ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')];
         $rules[] = ['slug', 'default', 'value' => null];
         $rules[] = ['status', 'default', 'value' => self::STATUS_ON];
-        $rules[] = ['tagNames', 'safe'];
         $rules[] = ['owner', 'integer'];
         $rules[] = ['webcams', 'safe'];
         $rules[] = [['latitude','longitude'], 'required',
@@ -104,6 +103,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
         if($this->module->settings['enableCategory']){
             $rules[] = ['category_id', 'required', 'message' => Yii::t('easyii', 'Select category')];
         }
+        
+        $rules[] = ['tagNames', 'safe'];
 
         return $rules;
     }
@@ -124,7 +125,6 @@ class Item extends \kilyakus\modules\components\ActiveRecord
             'time' => Yii::t('easyii', 'Date'),
             'time_to' => Yii::t('easyii', 'Date'),
             'slug' => Yii::t('easyii', 'Slug'),
-            'tagNames' => Yii::t('easyii', 'Tags'),
             'owner' => Yii::t('easyii', 'Authorize yourself as the owner'),
             'gradient' => Yii::t('easyii/catalog', 'Choose Color'),
             'gradient_to' => Yii::t('easyii/catalog', 'To Color'),
@@ -134,6 +134,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
             'city' => Yii::t('easyii/catalog','City'),
             'street' => Yii::t('easyii/catalog','Street'),
             'number' => Yii::t('easyii/catalog','Number'),
+            
+            'tagNames' => Yii::t('easyii', 'Tags'),
         ];
     }
 
@@ -419,7 +421,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
     public function getVideos()
     {
-        return $this->hasMany(Video::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->sort();
+        return $this->hasMany(Video::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
     }
 
     public function getComments()

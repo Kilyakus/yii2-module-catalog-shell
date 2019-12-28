@@ -438,18 +438,42 @@ class ItemsController extends \bin\admin\components\Controller
 
         $categories = $categoryClass::find()->where(['category_id' => $parents])->all();
 
-        $dataForm = [];
-        foreach (CField::tree($categories,get_class(new $categoryClass)) as $key => $data) {
-            $dataForm[] = (array)$data;
+        $filter = ['category_id' => $categories, 'class' => get_class(new $categoryClass), 'status' => 1];
+
+        foreach (CField::find()->where(['and',$filter,['depth' => 0]])->orderBy(['order_num' => SORT_DESC])->all() as $field) {
+            $fields[] = $field;
         }
 
-        usort($dataForm, function($a, $b){
-            return ($a['category_id'] - $b['category_id']);
-        });
+        if($fields){
+            usort($fields, function($a, $b){
+                return ($a['category_id'] - $b['category_id']);
+            });
 
-        foreach ($dataForm as $key => $data) {
-            $dataForm[$key] = (object)$data;
+            foreach ($fields as $key => $field) {
+                $fields[$key] = $field;
+            }
         }
+
+        return $this->renderAjax('@kilyakus/shell/directory/views/items/dataForm', ['fields' => $fields, 'filter' => $filter, 'data' => $data]);
+
+        // $parents = $categoryClass::getParents($id) ? ArrayHelper::getColumn($categoryClass::getParents($id),'category_id') : [];
+
+        // array_push($parents,$category->category_id);
+
+        // $categories = $categoryClass::find()->where(['category_id' => $parents])->all();
+
+        // $dataForm = [];
+        // foreach (CField::tree($categories,get_class(new $categoryClass)) as $key => $data) {
+        //     $dataForm[] = (array)$data;
+        // }
+
+        // usort($dataForm, function($a, $b){
+        //     return ($a['category_id'] - $b['category_id']);
+        // });
+
+        // foreach ($dataForm as $key => $data) {
+        //     $dataForm[$key] = (object)$data;
+        // }
         return $this->renderAjax('@kilyakus/shell/directory/views/items/dataForm',['fields' => $dataForm]);
     }
 
