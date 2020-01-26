@@ -544,8 +544,11 @@ class ItemsController extends \bin\admin\components\Controller
         if(!($model = $itemClass::findOne($id))){
             // return $this->redirect(['/' . $this->module->module->id . '/'.$this->module->id]);
         }
-
-        $model->status = $itemClass::STATUS_ARCHIVE;
+        if($model->status == $itemClass::STATUS_ARCHIVE){
+            $model->status = $itemClass::STATUS_OFF;
+        }else{
+            $model->status = $itemClass::STATUS_ARCHIVE;
+        }
         $model->update();
 
         $this->flash('success', Yii::t('easyii/' . $this->moduleName, 'Your entry has been archived.'));

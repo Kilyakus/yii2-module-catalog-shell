@@ -5,12 +5,15 @@ use yii\helpers\ArrayHelper;
 use yii\widgets\ActiveForm;
 use bin\user\models\User;
 use bin\admin\modules\catalog\models\Item;
-use kilyakus\imageprocessor\Image;
 use bin\admin\modules\chat\models\Group;
+use yii\web\JsExpression;
+
 use kilyakus\web\widgets as Widget;
 use kilyakus\web\templates\UserCard\UserCard;
-use yii\web\JsExpression;
+use kilyakus\imageprocessor\Image;
 use kilyakus\widget\grid\GridView;
+
+use bin\admin\modules\geo\api\Geo;
 
 $settings = $this->context->module->settings;
 $moduleName = $this->context->module->id;
@@ -78,6 +81,35 @@ $gridColumns = [
 			return Widget\Peafowl::widget([
 				'items' => $categories
 			]);
+		},
+	],
+	[
+		'headerOptions' => ['style' => 'width:200px;'],
+		'attribute' => 'country_id',
+		'format' => 'raw',
+		'vAlign' => 'middle',
+		'filterType' => GridView::FILTER_SELECT2,
+		'filterWidgetOptions' => [
+			'model'	 => $searchModel,
+			'attribute' => 'created_by',
+			'data'	  => ArrayHelper::map(\bin\admin\modules\geo\models\MapsCountry::find()->all(),'id','name_ru'),
+			'pluginOptions' => [
+				'placeholder' => '',
+				'multiple' => false,
+				'allowClear' => true,
+				'minimumInputLength' => 2,
+				'ajax' => [
+					'url' => Url::to(['/maps/country-list']),
+					'dataType' => 'json',
+					'data' => new JsExpression('function(params) { return {q:params.term}; }')
+				],
+				'escapeMarkup' => new JsExpression('function (item) { return item; }'),
+				'templateResult' => new JsExpression('function(item) { return item.text; }'),
+				'templateSelection' => new JsExpression('function (item) { return item.text; }'),
+			],
+		],
+		'value' => function ($model) {
+			return Geo::country($model->country_id)->name;
 		},
 	],
 	[

@@ -2,18 +2,12 @@
 use yii\helpers\Html;
 use kilyakus\imageprocessor\Image;
 use kilyakus\web\widgets as Widget;
-?>
-<style type="text/css">
-.select2-container.form-control {width:0!important;}
-.kt-portlet {width:100%;}
-.form-group.input-group {display:flex;flex-wrap:nowrap;}
-</style>
 
-<?php if($this->context->module->module->id == 'page') : ?>
-<style type="text/css">
-.select2-container.form-control {width:100%!important;}
-</style>
-<?php endif; ?>
+$this->registerCss("
+.select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {width:100%!important;}
+", ["type" => "text/css"], 'eto_kostil_dataform');
+?>
+
 <?php if(count($fields)) : ?>
     <?php foreach ($fields as $key => $field) : ?>
         <?php if($field->children(1)->andFilterWhere($filter)->orderBy(['order_num' => SORT_DESC])->count()) : ?>
@@ -37,6 +31,7 @@ use kilyakus\web\widgets as Widget;
                     ]); ?>
 
             <?php endif; ?>
+
                 <div class="row">
                     <?= $this->render('dataForm',['fields' => $field->children(1)->andFilterWhere($filter)->orderBy(['lft' => $field->lft, 'rgt' => $field->rgt])->all(), 'data' => $data, 'filter' => $filter]) ?>
                 </div>
@@ -48,6 +43,7 @@ use kilyakus\web\widgets as Widget;
             <?php else: ?>
 
                     <?php Widget\Section::end(); ?>
+
                 </div>
 
             <?php endif; ?>
@@ -110,12 +106,25 @@ use kilyakus\web\widgets as Widget;
                 }
                 elseif ($field->type === 'select') {
                     if($field->options){
-                        $options = ['' => Yii::t('easyii/' . $this->context->moduleName, 'Select')];
                         foreach(explode(',',$field->options) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
 
-                        $html = Widget\Select2::widget(['name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'options' => ['multiple' => false], 'pluginOptions' => ['class' => 'form-control', 'closeOnSelect' => true, 'allowClear' => true]]);
+                        $html = Widget\Select2::widget([
+                            'name' => 'Data['.$field->name.']',
+                            'theme' => 'default', 
+                            'data' => $options, 
+                            'value' => $value, 
+                            'options' => [
+                                'placeholder' => Yii::t('easyii/' . $this->context->moduleName, 'Select'),
+                                'multiple' => false
+                            ], 
+                            'pluginOptions' => [
+                                'class' => 'form-control', 
+                                'closeOnSelect' => true, 
+                                'allowClear' => true
+                            ]
+                        ]);
                         echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,true);
 
                     }else{
@@ -125,14 +134,27 @@ use kilyakus\web\widgets as Widget;
                     }
                 }
                 elseif ($field->type === 'checkbox') {
-                    $options = '';
+                    $options = [];
                     if($field->options){
 
                         foreach(explode(',',$field->options) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
 
-                        $html = Widget\Select2::widget(['name' => 'Data['.$field->name.']','theme' => 'default', 'data' => $options, 'value' => $value, 'options' => ['multiple' => true], 'pluginOptions' => ['class' => 'form-control', 'closeOnSelect' => false, 'allowClear' => true]]);
+                        $html = Widget\Select2::widget([
+                            'name' => 'Data['.$field->name.']',
+                            'theme' => 'default',
+                            'data' => $options,
+                            'value' => $value,
+                            'options' => [
+                                'placeholder' => Yii::t('easyii/' . $this->context->moduleName, 'Select'),
+                                'multiple' => true
+                            ],
+                            'pluginOptions' => [
+                                'class' => 'form-control', 
+                                'closeOnSelect' => false, 'allowClear' => true
+                            ]
+                        ]);
                         echo \kilyakus\shell\directory\controllers\ItemsController::genContainer($html,$field,true);
 
                     }else{

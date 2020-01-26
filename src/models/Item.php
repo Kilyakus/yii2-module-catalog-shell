@@ -489,7 +489,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
             ->andFilterWhere(['created_by' => $this->created_by])
             ->andFilterWhere(['updated_by' => $this->updated_by])
             ->andFilterWhere(['owner' => $this->owner])
-            ->andFilterWhere(['status' => $this->status]);
+            ->andFilterWhere(['status' => $this->status])
+            ->andFilterWhere(['country_id' => $this->country_id]);
 
         return $dataProvider;
     }
