@@ -25,7 +25,7 @@ $chatClass = $this->context->chatClass;
 $this->title = Yii::t('easyii/' . $moduleName, ucfirst($moduleName)) . (!$model->title ?: ': ' . $model->title);
 
 $gridColumns = [
-	['class' => 'kilyakus\widget\grid\SerialColumn'],
+	// ['class' => 'kilyakus\widget\grid\SerialColumn'],
 	[
 		'class' => 'kilyakus\widget\grid\ExpandRowColumn',
 		'width' => '50px',
@@ -33,17 +33,17 @@ $gridColumns = [
 			return GridView::ROW_COLLAPSED;
 		},
 		'detail' => function ($model, $key, $index, $column) {
-			return $model->description;
+			return $model->description . Html::tag('div', 'Address: ' . \app\controllers\MapsController::genAddress($model));
 		},
 		'headerOptions' => ['class' => 'kartik-sheet-style'],
 		'expandOneOnly' => true
 	],
 	[
-		'headerOptions' => ['style' => 'width:60px;'],
+		'headerOptions' => ['style' => 'width:60px;min-width:60px;'],
 		'format' => 'raw',
 		'vAlign' => 'middle',
 		'value' => function ($model) {
-			return Html::img(Image::thumb($item->preview, 40, 40),['class' => 'img-circle']);
+			return Html::img(Image::thumb($item->image, 40, 40),['class' => 'img-circle']);
 		},
 	],
 	[
@@ -74,7 +74,7 @@ $gridColumns = [
 				$categories[] = [
 					'label' => $category->title,
 					'image' => Image::thumb($category->icon ? $category->icon : $category->image,30,30),
-					'url' => Url::toRoute(['/' . $module . '/'.$moduleName.'/a/edit', 'id' => $category->primaryKey]),
+					'url' => Url::toRoute(['/' . $this->context->module->module->id . '/'. $this->context->module->id .'/a/edit', 'id' => $category->primaryKey]),
 				];
 			}
 
@@ -84,34 +84,59 @@ $gridColumns = [
 		},
 	],
 	[
-		'headerOptions' => ['style' => 'width:200px;'],
-		'attribute' => 'country_id',
+		'headerOptions' => ['style' => 'width:60px;min-width:60px;'],
+		// 'attribute' => 'parent_id',
+		'header' => Yii::t('easyii', 'Parent Record'),
 		'format' => 'raw',
 		'vAlign' => 'middle',
-		'filterType' => GridView::FILTER_SELECT2,
-		'filterWidgetOptions' => [
-			'model'	 => $searchModel,
-			'attribute' => 'created_by',
-			'data'	  => ArrayHelper::map(\bin\admin\modules\geo\models\MapsCountry::find()->all(),'id','name_ru'),
-			'pluginOptions' => [
-				'placeholder' => '',
-				'multiple' => false,
-				'allowClear' => true,
-				'minimumInputLength' => 2,
-				'ajax' => [
-					'url' => Url::to(['/maps/country-list']),
-					'dataType' => 'json',
-					'data' => new JsExpression('function(params) { return {q:params.term}; }')
-				],
-				'escapeMarkup' => new JsExpression('function (item) { return item; }'),
-				'templateResult' => new JsExpression('function(item) { return item.text; }'),
-				'templateSelection' => new JsExpression('function (item) { return item.text; }'),
-			],
-		],
 		'value' => function ($model) {
-			return Geo::country($model->country_id)->name;
+
+			if($model->parent){
+
+				return Html::a(
+					Html::img(Image::thumb($model->parent->image,40,40),['class' => 'img-circle', 'data-toggle' => 'kt-tooltip', 'data-skin' => 'dark', 'data-placement' => 'top', 'data-original-title' => $model->parent->translate->title]),
+					Url::toRoute(['/' . $this->context->module->module->id . '/' . $model->parent->module->name . '/items/edit', 'id' => $model->parent->primaryKey]),
+					[
+						'target' => '_blank',
+						'data-pjax' => '0'
+					]
+				);
+
+			}else{
+				return '';
+			}
 		},
+		'visible' => $this->context->module->settings['parentSubmodule']
 	],
+	// [
+	// 	'headerOptions' => ['style' => 'width:200px;'],
+	// 	'attribute' => 'country_id',
+	// 	'format' => 'raw',
+	// 	'vAlign' => 'middle',
+	// 	'filterType' => GridView::FILTER_SELECT2,
+	// 	'filterWidgetOptions' => [
+	// 		'model'	 => $searchModel,
+	// 		'attribute' => 'country_id',
+	// 		'data'	  => ArrayHelper::map(\bin\admin\modules\geo\models\MapsCountry::find()->all(),'id','name_ru'),
+	// 		'pluginOptions' => [
+	// 			'placeholder' => '',
+	// 			'multiple' => false,
+	// 			'allowClear' => true,
+	// 			'minimumInputLength' => 2,
+	// 			'ajax' => [
+	// 				'url' => Url::to(['/maps/country-list']),
+	// 				'dataType' => 'json',
+	// 				'data' => new JsExpression('function(params) { return {q:params.term}; }')
+	// 			],
+	// 			'escapeMarkup' => new JsExpression('function (item) { return item; }'),
+	// 			'templateResult' => new JsExpression('function(item) { return item.text; }'),
+	// 			'templateSelection' => new JsExpression('function (item) { return item.text; }'),
+	// 		],
+	// 	],
+	// 	'value' => function ($model) {
+	// 		return Geo::country($model->country_id)->name;
+	// 	},
+	// ],
 	[
 		'headerOptions' => ['style' => 'width:160px;'],
 		'attribute' => 'created_by',
@@ -275,9 +300,123 @@ $gridColumns = [
 		]
 	],
 ];
+
+$get = Yii::$app->request->get('Item');
 ?>
 
 <?= $this->render('_menu', ['category' => $model,'breadcrumbs' => $breadcrumbs, 'class' => $class, 'parent' => $parent]) ?>
+
+<?php $form = ActiveForm::begin([
+	'method' => 'get',
+	'options' => [
+		'data-pjax' => true, 'data-pjax-problem' => true,'enctype' => 'multipart/form-data', 'class' => 'model-form',
+		'action' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $model->primaryKey])
+	],
+]); ?>
+
+	<?php $model = new Item ?>
+
+	<?php Widget\Portlet::begin([
+		'title' => 'Search filters',
+		'icon' => 'fa fa-sliders-h',
+		'footerContent' => Widget\Button::widget([
+			'type' => Widget\Button::TYPE_SUCCESS,
+			'title' => Yii::t('easyii', 'Search'),
+			'icon' => 'fa fa-check',
+			'block' => true,
+			'submit' => true
+		])
+	]); ?>
+
+		<div class="row">
+			<div class="col-sm-12 col-md-4">
+				<?= $form->field($model, 'country_id', ['options' => ['class' => 'form-group' . $settings['parentSubmodule'] ? '' : ' mb-0']])->widget(Widget\Select2::classname(), [
+					'data' => $get['country_id'] ? (Geo::country($get['country_id']) ? ArrayHelper::map(Geo::country($get['country_id']), 'id', 'name_ru') : null) : null,
+					'options' => [
+						'id' => 'item-country_id',
+						'value' => $get['country_id'],
+						'placeholder' => Yii::t('easyii','Search for a country ...')
+					],
+					'pluginOptions' => [
+						'allowClear' => true,
+						'minimumInputLength' => 3,
+						'ajax' => [
+							'url' => \yii\helpers\Url::to(['/maps/country-list']),
+							'dataType' => 'json',
+							'data' => new JsExpression('function(params) { return {q:params.term}; }')
+						],
+						'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+						'templateResult' => new JsExpression('function(country) { return country.text; }'),
+						'templateSelection' => new JsExpression('function (country) { return country.text; }'),
+					],
+				])->label(false); ?>
+			</div>
+
+			<div class="col-sm-12 col-md-4">
+				<?= $form->field($model, 'region_id', ['options' => ['class' => 'form-group' . $settings['parentSubmodule'] ? '' : ' mb-0']])->widget(Widget\Select2::classname(), [
+					'data' => $get['region_id'] ? (Geo::region($get['region_id']) ? ArrayHelper::map(Geo::region($get['region_id']), 'id', 'name_ru') : null) : null,
+					'options' => [
+						'id' => 'item-region_id',
+						'value' => $get['region_id'],
+	                    'placeholder' => Yii::t('easyii','Search for a region ...'),
+					],
+                    'pluginOptions' => [
+                    	'allowClear' => true,
+						'minimumInputLength' => 3,
+						'ajax' => [
+							'url' => \yii\helpers\Url::to(['/maps/region-list']),
+							'dataType' => 'json',
+							'data' => new JsExpression('function(params) { return {q:params.term}; }')
+						],
+						'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+						'templateResult' => new JsExpression('function(region) { return region.text; }'),
+						'templateSelection' => new JsExpression('function (region) { return region.text; }'),
+                    ]
+				])->label(false); ?>
+			</div>
+
+			<div class="col-sm-12 col-md-4">
+				<?= $form->field($model, 'city_id', ['options' => ['class' => 'form-group' . $settings['parentSubmodule'] ? '' : ' mb-0']])->widget(Widget\Select2::classname(), [
+					'data' => $get['city_id'] ? (Geo::city($get['city_id']) ? ArrayHelper::map(Geo::city($get['city_id']), 'id', 'name_ru') : null) : null,
+					'options' => [
+						'id' => 'item-locality_id',
+						'value' => $get['city_id'],
+						'placeholder' => Yii::t('easyii','Search for a city ...')
+					],
+					'pluginOptions' => [
+						'allowClear' => true,
+						'minimumInputLength' => 3,
+						'ajax' => [
+							'url' => \yii\helpers\Url::to(['/maps/city-list']),
+							'dataType' => 'json',
+							'data' => new JsExpression('function(params) { return {q:params.term}; }')
+						],
+						'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+						'templateResult' => new JsExpression('function(city) { return city.text; }'),
+						'templateSelection' => new JsExpression('function (city) { return city.text; }'),
+					],
+				])->label(false); ?>
+			</div>
+		</div>
+
+		<?php if($settings['parentSubmodule']) : ?>
+			<fieldset>
+				<legend>Поиск закрепленных мест</legend>
+
+				<?= $form->field($model, 'parent_id', [
+					'template' => "{input}{label}", 'options' => ['class' => 'form-group mb-1 mt-3'
+				]])->checkbox(['checked' => $get['parent_id'] == 1 ? true : false, 'class' => 'switch ml-0'],false)->label('Отобразить только закрепленные места'); ?>
+
+				<?= $form->field($model, 'nearby', [
+					'template' => "{input}{label}", 'options' => ['class' => 'form-group mb-0'
+				]])->checkbox(['checked' => $get['nearby'] == 1 ? true : false, 'class' => 'switch ml-0'],false)->label('Отобразить места поблизости'); ?>
+
+			</fieldset>
+		<?php endif; ?>
+
+	<?php Widget\Portlet::end(); ?>
+
+<?php ActiveForm::end(); ?>
 
 <?= GridView::widget([
 	'dataProvider' => $dataProvider,

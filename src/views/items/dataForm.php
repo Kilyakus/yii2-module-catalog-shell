@@ -105,7 +105,11 @@ $this->registerCss("
 
                 }
                 elseif ($field->type === 'select') {
+
                     if($field->options){
+
+                        $options = [];
+
                         foreach(explode(',',$field->options) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
@@ -134,9 +138,9 @@ $this->registerCss("
                     }
                 }
                 elseif ($field->type === 'checkbox') {
-                    $options = [];
+                    
                     if($field->options){
-
+                        $options = [];
                         foreach(explode(',',$field->options) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }

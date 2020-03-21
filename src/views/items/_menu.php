@@ -7,7 +7,7 @@ $action = $this->context->action->id;
 $moduleName = $this->context->module->id;
 $module = $this->context->module->module->id;
 if($module == 'app'){
-    $module = 'admin';
+	$module = 'admin';
 }
 $settings = $this->context->module->settings;
 
@@ -17,46 +17,46 @@ if($settings['enableCategory']){
 
 	if($action === 'index'){
 		$nav[] = [
-            'label' => '<i class="fa fa-chevron-left"></i>&nbsp; ' . Yii::t('easyii', 'Categories'),
-            'url' => Url::to(['/' . $module . '/'.$moduleName, 'class' => $class, 'parent' => $parent]),
-        ];
+			'label' => '<i class="fa fa-chevron-left"></i>&nbsp; ' . Yii::t('easyii', 'Categories'),
+			'url' => Url::to(['/' . $module . '/'.$moduleName, 'class' => $class, 'parent' => $parent]),
+		];
 	}
 
 	if(count($breadcrumbs) <= 1){
 		$nav[] = [
-            'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $category->title,
-            'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $category->primaryKey, 'class' => $class, 'parent' => $parent]),
-            'active' => ($action === 'index'),
-        ];
+			'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '<i class="fa fa-list"></i>&nbsp; ') . ($category ? $category->title : Yii::t('easyii', 'All Records')),
+			'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $category->primaryKey, 'class' => $class, 'parent' => $parent]),
+			'active' => ($action === 'index'),
+		];
 	}else{
 		$childrens = [];
 		foreach ($breadcrumbs as $key => $breadcrumb){
 			$childrens[] = [
-	            'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $breadcrumb,
-	            'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $key, 'class' => $class, 'parent' => $parent]),
-	        ];
+				'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $breadcrumb,
+				'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $key, 'class' => $class, 'parent' => $parent]),
+			];
 		}
 		$nav[] = ['label' => Yii::t('easyii','Back to categories'),'items' => $childrens,];
 	}
 	$nav[] = [
-        'label' => Yii::t('easyii', 'Add'),
-        'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/create', 'id' => $category->primaryKey, 'class' => $class, 'parent' => $parent]),
-        'active' => ($action === 'create'),
-    ];
+		'label' => '<i class="fa fa-plus"></i>&nbsp; ' . Yii::t('easyii', 'Add'),
+		'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/create', 'id' => $category->primaryKey, 'class' => $class, 'parent' => $parent]),
+		'active' => ($action === 'create'),
+	];
 }else{
 	$nav[] = [
-        'label' => Yii::t('easyii', 'Add'),
-        'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/create', 'class' => $class, 'parent' => $parent]),
-        'active' => ($action === 'create'),
-    ];
+		'label' => Yii::t('easyii', 'Add'),
+		'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/create', 'class' => $class, 'parent' => $parent]),
+		'active' => ($action === 'create'),
+	];
 }
 
 ?>
 
 <?= Widget\NavPage::widget([
-    'options' => [
-        'class' => 'nav-pills',
-    ],
-    'encodeLabels' => false,
-    'items' => $nav,
+	'options' => [
+		'class' => 'nav-pills',
+	],
+	'encodeLabels' => false,
+	'items' => $nav,
 ]) ?>

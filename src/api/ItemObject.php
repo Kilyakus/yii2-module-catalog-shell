@@ -65,11 +65,15 @@ class ItemObject extends \kilyakus\components\api\Object
     }
 
     public function getTitle(){
-        return LIVE_EDIT ? API::liveEdit($this->model->title, $this->editLink) : $this->model->title;
+        return LIVE_EDIT ? API::liveEdit($this->model->translate->title, $this->editLink) : $this->model->translate->title;
     }
 
     public function getPreview(){
         return $this->model->preview ? $this->model->preview : $this->model->image;
+    }
+
+    public function getImage(){
+        return $this->model->image ? $this->model->image : $this->model->preview;
     }
 
     public function getDescription(){
@@ -171,8 +175,12 @@ class ItemObject extends \kilyakus\components\api\Object
         if(!$this->_photos){
             $this->_photos = [];
 
-            foreach(Photo::find()->where(['class' => $Item::className(), 'item_id' => $this->id])->all() as $model){
-                $this->_photos[] = new $PhotoObject($model,['module' => $this->moduleName]);
+            $photos = Photo::find()->where(['and',['class' => $Item::className(), 'item_id' => $this->id], ['status' => Photo::STATUS_ON]]);
+
+            foreach($photos->all() as $model){
+                if($model->status == Photo::STATUS_ON){
+                    $this->_photos[] = new $PhotoObject($model,['module' => $this->moduleName]);
+                }
             }
         }
         return $this->_photos;
@@ -279,13 +287,7 @@ class ItemObject extends \kilyakus\components\api\Object
 
     public function getMembers()
     {
-        foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
-
-        $favorites = $Favorite::findAll(['item_id' => $this->id]);
-
-        $this->_members = User::findAll(ArrayHelper::getColumn($favorites,'user_id'));
-
-        return $this->_members;
+        return $this->model->members;
     }
 
     public function getFavorites()

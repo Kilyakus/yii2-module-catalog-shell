@@ -116,25 +116,66 @@ class ItemsController extends \bin\admin\components\Controller
             }
         }
 
-        $query = ['item_id' => $categoryAssign::findAll(['category_id' => $id])];
+        if($id){
+            $query['item_id'] = ArrayHelper::getColumn($categoryAssign::findAll(['category_id' => $id]),'item_id');
+        }
 
-        // if($class){
-        //     $query['parent_class'] = 'bin\admin\modules\\' . $class . '\models\Item';
-        // }
+        if($class){
+            $query['parent_class'] = $this->module->settings['parentSubmodule'];
+        }
 
-        // if($parent){
-        //     $query['parent_id'] = $parent;
-        // }
-        
-        // $items = $itemClass::find()->where($query)->orderBy(['status' => SORT_ASC])->all();
+        if($parent && Yii::$app->request->get('Item')['parent_id'] == 1){
+            $query['parent_id'] = $parent;
+        }
+
+        if(Yii::$app->request->get('Item')['nearby'] == 1){
+            
+            $parentClass = $this->module->settings['parentSubmodule'];
+
+            $parentModel = $parentClass::findOne($parent);
+
+            $latitude = (float)substr($parentModel->latitude, 0, 5);
+            $longitude = (float)substr($parentModel->longitude, 0, 5);
+
+            if(substr($latitude, 0, 1) != '-'){
+                $latPlus = ($latitude+0.9);
+            }else{
+                $latPlus = ($latitude-0.9);
+            }
+
+            if(substr($latitude, 0, 1) != '-'){
+                $latMinus = ($latitude-0.9);
+            }else{
+                $latMinus = ($latitude+0.9);
+            }
+
+            if(substr($longitude, 0, 1) != '-'){
+                $lngPlus = ($longitude+0.9);
+            }else{
+                $lngPlus = ($longitude-0.9);
+            }
+
+            if(substr($longitude, 0, 1) != '-'){
+                $lngMinus = ($longitude-0.9);
+            }else{
+                $lngMinus = ($longitude+0.9);
+            }
+
+            $nearby = ArrayHelper::getColumn($itemClass::find()->where(['and',['parent_class' => $parentClass],['category_id' => $categoryAssign::findAll(['category_id' => $id])],['<=','latitude', $latPlus],['>=','latitude', $latMinus],['<=','longitude', $lngPlus],['>=','longitude', $lngMinus],])->all(),'item_id');
+        }
 
         $searchModel  = \Yii::createObject($itemClass::className());
-        $dataProvider = $searchModel->search(\Yii::$app->request->get());
-        $dataProvider->query->andWhere($query);
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
+        if($query){
+            $dataProvider->query->andFilterWhere($query);
+        }
+        if(count($nearby)){
+            $dataProvider->query->andFilterWhere(['item_id' => $nearby]);
+        }
         $dataProvider->pagination->pageSize = Yii::$app->session->get('per-page', 20);
 
         $data = new ActiveDataProvider([
-            'query' => $itemClass::find()->where($query)->orderBy(['status' => SORT_ASC, 'item_id' => SORT_DESC]),
+            'query' => $itemClass::find()->orderBy(['status' => SORT_ASC, 'item_id' => SORT_DESC]),
         ]);
 
         $items = $data->models;
@@ -150,49 +191,6 @@ class ItemsController extends \bin\admin\components\Controller
             'class' => $class,
         ]);
     }
-
-    // public function actionUpload($class, $item_id = null)
-    // {
-    //     $success = null;
-
-    //     $photo = new Photo;
-    //     $photo->class = $class;
-    //     if($item_id){
-    //         $photo->item_id = $item_id;
-    //     }
-    //     $photo->created_at = Yii::$app->user->identity->id;
-    //     $photo->image = UploadedFile::getInstance($photo, 'image');
-
-    //     if($photo->image && $photo->validate(['image'])){
-    //         $photo->image = Image::upload($photo->image, 'photos', Photo::PHOTO_MAX_WIDTH);
-
-    //         if($photo->image){
-    //             if($photo->save()){
-    //                 $success = [
-    //                     'message' => Yii::t('easyii', 'Photo uploaded'),
-    //                     'photo' => [
-    //                         'id' => $photo->primaryKey,
-    //                         'image' => $photo->image,
-    //                         'thumb' => Image::thumb($photo->image, Photo::PHOTO_THUMB_WIDTH, Photo::PHOTO_THUMB_HEIGHT),
-    //                         'description' => ''
-    //                     ]
-    //                 ];
-    //             }
-    //             else{
-    //                 @unlink(Yii::getAlias('@webroot') . str_replace(Url::base(true), '', $photo->image));
-    //                 $this->error = Yii::t('easyii', 'Create error. {0}', $photo->formatErrors());
-    //             }
-    //         }
-    //         else{
-    //             $this->error = Yii::t('easyii', 'File upload error. Check uploads folder for write permissions');
-    //         }
-    //     }
-    //     else{
-    //         $this->error = Yii::t('easyii', 'File is incorrect');
-    //     }
-
-    //     return $this->formatResponse($success);
-    // }
 
     public function actionItemsList($q = null, $id = null) {
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -353,7 +351,7 @@ class ItemsController extends \bin\admin\components\Controller
                 'assign' => $this->getCategories($id),
                 'breadcrumbs' => $this->getBreadcrumbs($id),
                 'dataForm' => self::getItemFields($this->getCategories($id), $model->data),
-                'link' => $this->generateLink($model),
+                'link' => self::generateLink($model),
                 'parent' => $parent,
                 'class' => $class,
             ]);
@@ -455,26 +453,6 @@ class ItemsController extends \bin\admin\components\Controller
         }
 
         return $this->renderAjax('@kilyakus/shell/directory/views/items/dataForm', ['fields' => $fields, 'filter' => $filter, 'data' => $data]);
-
-        // $parents = $categoryClass::getParents($id) ? ArrayHelper::getColumn($categoryClass::getParents($id),'category_id') : [];
-
-        // array_push($parents,$category->category_id);
-
-        // $categories = $categoryClass::find()->where(['category_id' => $parents])->all();
-
-        // $dataForm = [];
-        // foreach (CField::tree($categories,get_class(new $categoryClass)) as $key => $data) {
-        //     $dataForm[] = (array)$data;
-        // }
-
-        // usort($dataForm, function($a, $b){
-        //     return ($a['category_id'] - $b['category_id']);
-        // });
-
-        // foreach ($dataForm as $key => $data) {
-        //     $dataForm[$key] = (object)$data;
-        // }
-        return $this->renderAjax('@kilyakus/shell/directory/views/items/dataForm',['fields' => $dataForm]);
     }
 
     public function actionDelete($id)
@@ -596,22 +574,29 @@ class ItemsController extends \bin\admin\components\Controller
 
     public function generateLink($model)
     {
-        $module = $this->module->id;
+        $module = $this->module;
+        $moduleName = $module->id;
+        $settings = $module->settings;
 
-        $select = ['' => Yii::t('easyii/'.$module,'Select')];
-        foreach(Yii::$app->getModule('admin')->activeModules as $module){
-            if($this->module->id != $module->name){
-                $class = \bin\admin\components\API::getClass($module->name,'models','Item');
-            }
-        
-            if($class){
-                $select[$class] = Yii::t('easyii/'.$module->name,ucfirst($module->name));
+        $select = ['' => Yii::t('easyii/'.$moduleName,'Select')];
+
+        if($parents = explode(',',$settings["parentSubmodule"])){
+
+            foreach ($parents as $className) {
+
+                if(class_exists($className)){
+
+                    $moduleParent = (new $className())->module->name;
+
+                    $select[$className] = Yii::t('easyii/'.$moduleParent,ucfirst($moduleParent));
+                }
             }
         }
 
         if($model->parent_class && class_exists($model->parent_class) && $model->parent_class != ''){
             $parent = $model->parent_class;
             $list = $parent::find()->all();
+
             if ($parent != null && count($list) > 0) {
                 foreach ($list as $i => $module) {
                     $children[$module['category_id']] = $module['title'];
@@ -651,14 +636,14 @@ class ItemsController extends \bin\admin\components\Controller
             $id = end($_POST['depdrop_parents']);
             $class = new $_POST['depdrop_all_params']['item-parent_class']();
             $query = $class::find();
-            $list = $query->asArray()->all();
+            $list = $query->orderBy(['category_id' => SORT_ASC])->all();
             $selected  = null;
             if ($id != null && count($list) > 0) {
                 $selected = '';
                 foreach ($list as $i => $element) {
-                    $out[] = ['id' => $element['item_id'], 'name' => $element['title']];
+                    $out[] = ['id' => $element->primaryKey, 'name' => $element->category->title . ': ' . $element->translate->title];
                     if ($i == 0) {
-                        $selected = $element['item_id'];
+                        $selected = $element->primaryKey;
                     }
                 }
                 return ['output' => $out, 'selected' => $selected];
@@ -708,9 +693,9 @@ class ItemsController extends \bin\admin\components\Controller
     {
         foreach ($trees as $key => $tree) {
             if($parent_title){
-                $title = implode(' > ',[$parent_title,$tree->title]);
+                $title = implode(' > ',[$parent_title,$tree->translate->title]);
             }else{
-                $title = $tree->title;
+                $title = $tree->translate->title;
             }
             if($childrens = $tree->children){
                 $categories[$title] = self::checkCategories($tree->children,$title);
@@ -736,19 +721,24 @@ class ItemsController extends \bin\admin\components\Controller
         return $return;
     }
 
-    public function genContainer($html = null,$field = null,$label = true,$image = true){
-
+    public function genContainer($html = null,$field = null,$label = true,$image = true)
+    {
         if($label != false){
             $label = '<label for="data-'.$field->name.'">'. Yii::t('easyii', $field->title) .'</label>';
         }
+
         if($image != false){
+
             $image = Html::img(
                 Image::thumb($field->image, 41,41),[
                     'class' => 'img-responsive btn btn-icon',
                 ]
             );
 
-            $image = '<label for="data-'.$field->name.'" class="input-group-prepend">'.$image.'</label>';
+            $image = Html::tag('label', $image, [
+                'for' => 'data-' . $field->name,
+                'class' => 'input-group-prepend'
+            ]);
 
             $html = Html::tag('div',$image.$html,[
                 'class' => 'form-group input-group',
@@ -759,9 +749,9 @@ class ItemsController extends \bin\admin\components\Controller
                 'data-original-title' => $field->text,
             ]);
 
-            return $label.$html;
+            return $label . $html;
         }else{
-            return $label.$html;
+            return $label . $html;
         }
     }
 }

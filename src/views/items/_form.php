@@ -33,22 +33,30 @@ $class = API::getClass($class,'models','Item');
 if(count($model->category->types)){
     $types = ArrayHelper::map($model->category->types,'type_id','title');
 }
+$model->parent_class = ($model->parent_class ? $model->parent_class : $class);
 ?>
 <?php Pjax::begin(['enablePushState' => false,]); ?>
 <?php $form = ActiveForm::begin([
     'options' => ['data-pjax' => true, 'data-pjax-problem' => true,'enctype' => 'multipart/form-data', 'class' => 'model-form'],
 ]); ?>
-<?php if($settings['enableSubmodule'] && IS_ROOT && count($link['select'])) : ?>
+
+<?php if($settings['parentSubmodule'] && IS_MODER) : ?>
     <div class="row">
         <div class="col-xs-12 col-md-6">
-            <?= $form->field($model, 'parent_class')->dropDownList($link['select'],['value' => ($model->parent_class ? $model->parent_class : $class)]); ?>
+            <?= $form->field($model, 'parent_class')->widget(Widget\Select2::classname(), [
+                'data' => $model->submodules,
+                'pluginOptions' => [
+                    'placeholder' => Yii::t('easyii', 'Select'),
+                    'allowClear' => true,
+                ]
+            ]); ?>
         </div>
         <div class="col-xs-12 col-md-6">
             <?= $form->field($model, 'parent_id')->widget(Widget\DepDrop::classname(), [
                 'data' => (($parent_class = $model->parent_class) && $model->parent_id) ? [$model->parent_id => $parent_class::findOne($model->parent_id)->title] : ($parent ? [$parent => $class::findOne($parent)->title] : null),
                 'type' => Widget\DepDrop::TYPE_SELECT2,
                 'select2Options' => [
-                    'pluginOptions' => ['value' => $parent, 'allowClear' => true,'multiple' => false,]
+                    'pluginOptions' => ['value' => $model->parent_id ? $model->parent_id : $parent, 'allowClear' => true,'multiple' => false,]
                 ],
                 'pluginOptions' => [
                     'depends' => ['item-parent_class'],
@@ -217,12 +225,31 @@ $model->time_to = date('Y-m-d h:i',($model->time_to ? $model->time_to : time()))
     <?= $form->field($model, 'tagNames')->widget(TagsInput::className()) ?>
 <?php endif; ?>
 
-<?php if($model->owner != Yii::$app->user->identity->id) : ?>
+<?php if(!IS_MODER) : ?>
     <?= $form->field($model, 'owner',['template' => '{input}{label}'])->checkbox([
         'id' => 'item-owner', 
         'class' => 'switch',
         'checked' => ($model->owner == Yii::$app->user->identity->id ? true : false)
     ]); ?>
+<?php else : ?>
+    <?= $form->field($model, 'owner')->widget(Widget\Select2::className(), [
+        'data'      => ArrayHelper::map(\bin\user\models\User::find()->all(), 'id', 'name'),
+        'options'   => [
+            'placeholder' => Yii::t('easyii/' . $module, 'Choose the owner from the users list or skip this field'),
+        ],
+        'pluginOptions' => [
+            'allowClear' => true,
+            'minimumInputLength' => 2,
+            'ajax' => [
+                'url' => Url::to(['/user/data/user-list']),
+                'dataType' => 'json',
+                'data' => new JsExpression('function(params) { return {q:params.term}; }')
+            ],
+            'escapeMarkup' => new JsExpression('function (item) { return item; }'),
+            'templateResult' => new JsExpression('function(item) { return item.text; }'),
+            'templateSelection' => new JsExpression('function (item) { return item.text; }'),
+        ],
+    ])->label('Владелец'); ?>
 <?php endif; ?>
 
 <?php if(IS_ROOT) : ?>

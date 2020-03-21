@@ -48,5 +48,5 @@ return [
     'Parent module' => 'Родительский модуль',
     'Module category' => 'Родительская категория',
 
-    'Forums' => 'Форумы',
+    'Choose the owner from the users list or skip this field' => 'Укажите владельца, либо оставьте поле пустым',
 ];

@@ -14,11 +14,20 @@ $settings = $this->context->module->settings;
 $modules = [];
 foreach (Yii::$app->getModule('admin')->activeModules as $key => $activeModule) {
 	$parents = explode(',',$activeModule->settings["parentSubmodule"]);
-	if($activeModule->settings["enableSubmodule"] && in_array($moduleName, $parents)) {
-		$modules[] = [
-			'label' => '<span class="' . $activeModule->icon . '"></span>&nbsp; ' . Yii::t('easyii/'.$activeModule->name, $activeModule->title),
-			'url' => Url::to(['/' . $module . '/' . $activeModule->name . '/a/index', 'parent' => $model->primaryKey,'class' => $moduleName]),
-		];
+
+	if($activeModule->settings["enableSubmodule"]) {
+
+		foreach ($parents as $className) {
+			if(class_exists($className)){
+				$moduleParent = (new $className())->module->name;
+				if($moduleName == $moduleParent){
+					$modules[] = [
+						'label' => '<span class="' . $activeModule->icon . '"></span>&nbsp; ' . Yii::t('easyii/'.$activeModule->name, $activeModule->title),
+						'url' => Url::to(['/' . $module . '/' . $activeModule->name . '/a/index', 'parent' => $model->primaryKey,'class' => $moduleName]),
+					];
+				}
+			}
+		}
 	}
 }
 ?>
