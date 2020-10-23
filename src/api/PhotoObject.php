@@ -10,6 +10,7 @@ class PhotoObject extends \kilyakus\components\api\Object
 {
     public $moduleName;
     public $image;
+    public $video;
     public $title;
     public $description;
 

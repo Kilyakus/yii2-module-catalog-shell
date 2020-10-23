@@ -10,7 +10,7 @@ use yii\web\JsExpression;
 
 use kilyakus\web\widgets as Widget;
 use kilyakus\web\templates\UserCard\UserCard;
-use kilyakus\imageprocessor\Image;
+use kilyakus\helper\media\Image;
 use kilyakus\widget\grid\GridView;
 
 use bin\admin\modules\geo\api\Geo;
@@ -33,7 +33,7 @@ $gridColumns = [
 			return GridView::ROW_COLLAPSED;
 		},
 		'detail' => function ($model, $key, $index, $column) {
-			return $model->description . Html::tag('div', 'Address: ' . \app\controllers\MapsController::genAddress($model));
+			return $model->description . Html::tag('div', 'Address: ' . $model->address);
 		},
 		'headerOptions' => ['class' => 'kartik-sheet-style'],
 		'expandOneOnly' => true
@@ -43,7 +43,7 @@ $gridColumns = [
 		'format' => 'raw',
 		'vAlign' => 'middle',
 		'value' => function ($model) {
-			return Html::img(Image::thumb($item->image, 40, 40),['class' => 'img-circle']);
+			return Html::img($model->getImage(40,40),['class' => 'img-circle']);
 		},
 	],
 	[
@@ -213,7 +213,7 @@ $gridColumns = [
 				$moduleName = $this->context->module->id;
 				$chatClass = $this->context->chatClass;
 				$chat = $chatClass::find()->where(['item_id' => $model['item_id']])->one();
-				if(IS_ROOT) {
+				if(IS_MODER) {
 					return Widget\Dropdown::widget([
 						'button' => [
 							'icon' => 'fa fa-cog',
@@ -260,21 +260,25 @@ $gridColumns = [
 								'icon' => 'glyphicon glyphicon-link',
 								'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/copy', 'id' => $model->primaryKey]),
 								'linkOptions' => ['data-pjax' => '0'],
+								'visible' => IS_ADMIN,
 							],
 							[
 								'divider' => true,
+								'visible' => IS_ROOT,
 							],
 							[
 								'label' => Yii::t('easyii', 'Move up'),
 								'icon' => 'fa fa-arrow-up',
 								'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/up', 'id' => $model->primaryKey, 'category_id' => $model->primaryKey]),
 								'linkOptions' => ['data-pjax' => '0'],
+								'visible' => IS_ROOT,
 							],
 							[
 								'label' => Yii::t('easyii', 'Move down'),
 								'icon' => 'fa fa-arrow-down',
 								'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/down', 'id' => $model->primaryKey, 'category_id' => $model->primaryKey]),
 								'linkOptions' => ['data-pjax' => '0'],
+								'visible' => IS_ROOT,
 							],
 							[
 								'divider' => true,

@@ -11,6 +11,7 @@ use kilyakus\package\seo\behaviors\SeoBehavior;
 use kilyakus\package\translate\behaviors\TranslateBehavior;
 use kilyakus\package\taggable\behaviors\Taggable;
 use kilyakus\cutter\behaviors\CutterBehavior;
+use bin\admin\models\Album;
 use bin\admin\models\Photo;
 use bin\admin\models\Video;
 use bin\admin\models\Comment;
@@ -22,6 +23,7 @@ use bin\user\models\User;
 use bin\user\models\UserSearch;
 use yii\data\ActiveDataProvider;
 use yii\db\Expression;
+use kilyakus\helper\media\Image;
 
 class Item extends \kilyakus\modules\components\ActiveRecord
 {
@@ -66,6 +68,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 		parent::init();
 	}
+
+	protected $cacheCategory;
 
 	// public $category;
 	// public $country;
@@ -126,6 +130,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 	{
 		parent::__construct();
 
+		static::put('date_range');
+		
 		static::put('nearby');
 		static::put('radius');
 		static::put('distance');
@@ -133,6 +139,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 	public function rules()
 	{
+		$modelName = (new \ReflectionClass($this))->getShortName();
+
 		$rules = [];
 		$rules[] = ['title', 'trim'];
 		$rules[] = [['parent_class','title','permission','gradient','gradient_to','latitude','longitude'], 'string', 'max' => 255];
@@ -141,8 +149,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		$rules[] = ['description', 'safe'];
 		$rules[] = ['price', 'number'];
 		$rules[] = ['discount', 'integer', 'max' => 100];
-		$rules[] = [['type_id','views','country_id','region_id','city_id','street_id','street_number_id', 'available', 'time', 'created_by', 'updated_by', 'owner', 'status'], 'integer'];
-		$rules[] = [['time','time_to'], 'default', 'value' => time()];
+		$rules[] = [['type_id','views','country_id','region_id','city_id','street_id','street_number_id', 'available', 'created_by', 'updated_by', 'owner', 'status'], 'integer'];
+		// $rules[] = [['time','time_to'], 'default', 'value' => time()];
 		$rules[] = ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')];
 		$rules[] = ['slug', 'default', 'value' => null];
 		$rules[] = ['status', 'default', 'value' => self::STATUS_ON];
@@ -161,7 +169,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 			}','message' => ''// Yii::t('easyii', 'You must enter the marker on the map')
 		];
 
-		if(!Yii::$app->request->post('TranslateText')){
+		if(!Yii::$app->request->post($modelName)['translations']){
 			$rules[] = ['title', 'required'];
 		}
 
@@ -172,6 +180,10 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		if($this->module->settings['enableCategory']){
 			$rules[] = ['category_id', 'required', 'message' => Yii::t('easyii', 'Select category')];
 		}
+
+		$rules[] = [['date_range'], 'match', 'pattern' => '/^.+\s\-\s.+$/'];
+
+		$rules[] = ['translations', 'safe'];
 		
 		$rules[] = ['tagNames', 'safe'];
 
@@ -198,6 +210,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 			'gradient' => Yii::t('easyii/' . $this->module->name, 'Choose Color'),
 			'gradient_to' => Yii::t('easyii/' . $this->module->name, 'To Color'),
 
+			'continent' => Yii::t('easyii/' . $this->module->name,'Continent'),
 			'country' => Yii::t('easyii/' . $this->module->name,'Country'),
 			'region' => Yii::t('easyii/' . $this->module->name,'Region'),
 			'city' => Yii::t('easyii/' . $this->module->name,'City'),
@@ -214,11 +227,13 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 	public function behaviors()
 	{
 		return [
-			'guiBehavior' => [
-				'class' => GuiBehavior::className(),
-				'model' => Photo::className(),
-				'isRoot' => IS_MODER,
-				'identity' => Yii::$app->user->identity->id,
+			'dateRangeBehavior' => [
+				'class' => \kilyakus\widget\daterange\DateRangeBehavior::className(),
+				'attribute' => 'date_range',
+				'dateStartAttribute' => 'time',
+				'dateEndAttribute' => 'time_to',
+			    // 'dateStartFormat' => Yii::$app->formatter->datetimeFormat,
+			    // 'dateEndFormat' => Yii::$app->formatter->datetimeFormat,
 			],
 			'seoBehavior' => SeoBehavior::className(),
 			'translateBehavior' => TranslateBehavior::className(),
@@ -228,27 +243,81 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 				'attribute' => 'title',
 				'ensureUnique' => true
 			],
-			'preview' => [
-				'class' => CutterBehavior::className(),
-				'attributes' => 'preview',
-				'baseDir' => '/uploads/' . $this->module->name . '/previews',
-				'basePath' => '@webroot/uploads/' . $this->module->name . '/previews',
+			'albumBehavior' => [
+                'class' => GuiBehavior::className(),
+                'model' => Album::className(),
+                'isRoot' => IS_USER,
+                'identity' => Yii::$app->user->identity->id,
+            ],
+			'photoBehavior' => [
+				'class' => GuiBehavior::className(),
+				'model' => Photo::className(),
+				'isRoot' => IS_MODER,
+				'identity' => Yii::$app->user->identity->id,
 			],
-			'image' => [
-				'class' => CutterBehavior::className(),
-				'attributes' => 'image',
-				'baseDir' => '/uploads/' . $this->module->name . '/images',
-				'basePath' => '@webroot/uploads/' . $this->module->name . '/images',
-			],
+			// 'preview' => [
+			// 	'class' => CutterBehavior::className(),
+			// 	'attributes' => 'preview',
+			// 	'baseDir' => '/uploads/' . $this->module->name . '/previews',
+			// 	'basePath' => '@webroot/uploads/' . $this->module->name . '/previews',
+			// ],
+			// 'image' => [
+			// 	'class' => CutterBehavior::className(),
+			// 	'attributes' => 'image',
+			// 	'baseDir' => '/uploads/' . $this->module->name . '/images',
+			// 	'basePath' => '@webroot/uploads/' . $this->module->name . '/images',
+			// ],
 		];
+	}
+
+	public static function create($attributes = [])
+	{
+		if(!empty($attributes)){
+
+			$modelClass = get_called_class();
+
+			$model = new $modelClass;
+
+			foreach ($attributes as $attribute => $value)
+			{
+				if(array_key_exists($attribute, $model->attributes))
+				{
+					$model->{$attribute} = $value;
+				}
+			}
+
+			$model->save();
+
+			return $model;
+
+		}else{
+
+			return false;
+
+		}
 	}
 
 	public function beforeSave($insert)
 	{
 		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+		
+		$this->cacheCategory = $this->category_id;
 
-		if($this->isAttributeChanged('category_id')){
-			$CategoryAssign::deleteAll(['item_id' => $this->primaryKey]);
+		if($this->isNewRecord){
+			if(empty($this->time)){
+				$this->time = time();
+			}
+			if(empty($this->time_to) && time() >= $this->time){
+				$this->time_to = time();
+			}
+		}
+
+		if($this->isAttributeChanged('category_id') || $this->isNewRecord)
+		{
+			if(is_array($this->category_id) || is_object($this->category_id))
+			{
+				$this->category_id = $this->category_id[0];
+			}
 		}
 
 		if($this->isAttributeChanged('city_id')){
@@ -267,10 +336,12 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 			}
 		}
 
-		if (parent::beforeSave($insert)) {
+		if (parent::beforeSave($insert)) {	
 
-			if($this->module->settings['parentSubmodule']){
-				$this->parent_class = $this->module->settings['parentSubmodule'];
+			if(!empty($this->module->settings['submoduleClass'])){
+				$this->parent_class = $this->module->settings['submoduleClass'];
+			}elseif(!empty($this->module->settings['subcategoryClass']) && empty($this->module->settings['submoduleClass'])){
+				$this->parent_class = $this->module->settings['subcategoryClass'];
 			}
 
 			if($this->isNewRecord || !$this->created_by){
@@ -291,14 +362,6 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 			}
 
 			$this->contacts = json_encode($this->contacts);
-
-			if(!$insert && $this->preview != $this->oldAttributes['preview'] && $this->oldAttributes['preview']){
-				@unlink(Yii::getAlias('@webroot').$this->oldAttributes['preview']);
-			}
-
-			if(!$insert && $this->image != $this->oldAttributes['image'] && $this->oldAttributes['image']){
-				@unlink(Yii::getAlias('@webroot').$this->oldAttributes['image']);
-			}
 
 			return true;
 		} else {
@@ -346,44 +409,15 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 			}
 		}
 
-		$post = Yii::$app->request->post('Item');
+		$CategoryAssign::deleteAll(['item_id' => $this->primaryKey]);
 
-		if(is_array($post['category_id'])){
-			foreach ($post['category_id'] as $item) {
-				$assign = new $CategoryAssign;
-				$assign->category_id = $item;
-				$assign->item_id = $this->primaryKey;
-				$assign->save();
-
-				$this->assignParents($item);
+		if(is_array($this->cacheCategory) || is_object($this->cacheCategory))
+		{
+			foreach($this->cacheCategory as $categoryId){
+				$this->insertCategoriesValue(trim($categoryId));
 			}
 		}else{
-			$assign = new $CategoryAssign;
-			$assign->category_id = $post['category_id'];
-			$assign->item_id = $this->primaryKey;
-			$assign->save();
-
-			$this->assignParents($post['category_id']);
-		}
-	}
-
-	public function assignParents($id)
-	{
-		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
-
-		if($parent = $Category::parent($id)){
-			if(!$CategoryAssign::findAll(['category_id' => $parent->category_id, 'item_id' => $this->primaryKey])){
-				$assign = new $CategoryAssign;
-				$assign->category_id = $parent->category_id;
-				$assign->item_id = $this->primaryKey;
-				$assign->save();
-
-				if($parent->category_id){
-					return $this->assignParents($parent->category_id);
-				}
-			}
-		}else{
-			return false;
+			$this->insertCategoriesValue($this->cacheCategory);
 		}
 	}
 
@@ -409,14 +443,6 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 			$video->delete();
 		}
 
-		if($this->preview) {
-			@unlink(Yii::getAlias('@webroot') . $this->preview);
-		}
-
-		if($this->image) {
-			@unlink(Yii::getAlias('@webroot') . $this->image);
-		}
-
 		$ItemData::deleteAll(['item_id' => $this->primaryKey]);
 
 		$ItemContacts::deleteAll(['item_id' => $this->primaryKey]);
@@ -428,11 +454,11 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 	{
 		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
-		Yii::$app->db->createCommand()->insert($ItemData::tableName(), [
+		$this->insertData($ItemData::tableName(), [
 			'item_id' => $this->primaryKey,
 			'name' => $name,
-			'value' => $value
-		])->execute();
+			'value' => $value,
+		]);
 	}
 
 	private function parseData(){
@@ -443,15 +469,53 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 	{
 		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
-		Yii::$app->db->createCommand()->insert($ItemContacts::tableName(), [
+		$this->insertData($ItemContacts::tableName(), [
 			'item_id' => $this->primaryKey,
 			'name' => $name,
-			'value' => $value
-		])->execute();
+			'value' => $value,
+		]);
 	}
 
 	private function parseContacts(){
 		$this->contacts = $this->contacts !== '' ? json_decode($this->contacts) : [];
+	}
+
+	private function insertCategoriesValue($category)
+	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+		$this->insertData($CategoryAssign::tableName(), [
+			'item_id' => $this->primaryKey,
+			'category_id' => $category,
+		]);
+
+		$this->assignParents($category);
+	}
+
+	public function assignParents($id)
+	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+		if($parent = $Category::parent($id)){
+			if(!$CategoryAssign::findAll(['category_id' => $parent->category_id, 'item_id' => $this->primaryKey]))
+			{
+				$this->insertData($CategoryAssign::tableName(), [
+					'item_id' => $this->primaryKey,
+					'category_id' => $parent->category_id,
+				]);
+
+				if($parent->category_id){
+					return $this->assignParents($parent->category_id);
+				}
+			}
+		}else{
+			return false;
+		}
+	}
+
+	private function insertData($dbname, $data = [])
+	{
+		return Yii::$app->db->createCommand()->insert($dbname, $data)->execute();
 	}
 
 	public function getCategory()
@@ -488,14 +552,39 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		return $categories;
 	}
 
+	public function getImage($width = null, $height = null)
+	{
+		if($width != null || $height != null){
+			return Image::thumb($this->image, $width, $height);
+		}
+		
+		return $this->image;
+	}
+
+	public function getPreview($width = null, $height = null)
+	{
+		if($width != null || $height != null){
+			return Image::thumb($this->preview, $width, $height);
+		}
+		
+		return $this->preview;
+	}
+
+	public function getAlbums()
+	{
+		return $this->hasMany(Album::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
+	}
+
 	public function getPhotos()
 	{
-		return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
+		return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->orderBy(['main' => SORT_DESC, 'order_num' => SORT_DESC]);
 	}
 
 	public function getVideos()
 	{
-		return $this->hasMany(Video::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
+		// return $this->hasMany(Video::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
+		
+		return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->andWhere(['not', ['video' => 'null']])->orderBy(['main' => SORT_DESC, 'order_num' => SORT_DESC]);
 	}
 
 	public function getComments()
@@ -513,38 +602,72 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		return $this->hasMany(CType::className(), ['type_id' => 'type_id'])->where(['class' => self::className()])->sort();
 	}
 
+	public function getContinent()
+	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+		if(($country = $this->country) && !$this->continent_id)
+		{
+			$this->continent_id = $this->country->continent->primaryKey;
+			$this->update();
+		}
+
+		return $this->hasOne(\bin\admin\modules\geo\models\MapsContinent::className(), ['id' => 'continent_id']);
+	}
+
+	public function getCountry()
+	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+		return $this->hasOne(\bin\admin\modules\geo\models\MapsCountry::className(), ['id' => 'country_id']);
+	}
+
+	public function getRegion()
+	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+		return $this->hasOne(\bin\admin\modules\geo\models\MapsRegion::className(), ['id' => 'region_id']);
+	}
+
+	public function getCity()
+	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+		return $this->hasOne(\bin\admin\modules\geo\models\MapsCity::className(), ['id' => 'city_id']);
+	}
+
 	public function getAddress()
 	{
 		return \bin\admin\modules\geo\api\Geo::address($this);
 	}
 
-    public function getMembers()
-    {
-        $query = [
-            'and',
-            ['class' => get_class($this)],
-            ['item_id' => $this->primaryKey],
-            ['owner_class' => get_class(new User)],
-        ];
+	public function getMembers()
+	{
+		$query = [
+			'and',
+			['class' => get_class($this)],
+			['item_id' => $this->primaryKey],
+			['owner_class' => get_class(new User)],
+		];
 
-        $searchModel  = \Yii::createObject(FavoriteAssign::className());
-        $dataProvider = $searchModel->search(\Yii::$app->request->get());
-        $dataProvider->query->andFilterWhere($query);
+		$searchModel  = \Yii::createObject(FavoriteAssign::className());
+		$dataProvider = $searchModel->search(\Yii::$app->request->get());
+		$dataProvider->query->andFilterWhere($query);
 
-        $members = [];
+		$members = [];
 
-        foreach ($dataProvider->query->all() as $key => $item) {
-            $members[] = $item->owner->primaryKey;
-        }
-        
-        $members = array_unique($members);
+		foreach ($dataProvider->query->all() as $key => $item) {
+			$members[] = $item->owner->primaryKey;
+		}
+		
+		$members = array_unique($members);
 
-        $searchModel  = \Yii::createObject(UserSearch::className());
-        $dataProvider = $searchModel->search(\Yii::$app->request->get());
-        $dataProvider->query->where(['id' => $members]);
+		$searchModel  = \Yii::createObject(UserSearch::className());
+		$dataProvider = $searchModel->search(\Yii::$app->request->get());
+		$dataProvider->query->where(['id' => $members]);
 
-        return $dataProvider->query->all();
-    }
+		return $dataProvider->query->all();
+	}
 
 	public function getFields()
 	{
@@ -585,7 +708,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 			if($activeModule->settings["enableSubmodule"]) {
 
-				$parents = explode(',',$activeModule->settings["parentSubmodule"]);
+				$parents = explode(',',$activeModule->settings["submoduleClass"]);
 
 				foreach ($parents as $className) {
 					if(class_exists($className)){
@@ -637,12 +760,12 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 			->andFilterWhere(['country_id' => $this->country_id])
 			->andFilterWhere(['region_id' => $this->region_id])
 			->andFilterWhere(['city_id' => $this->city_id])
-			// ->andFilterWhere(['like', 'latitude', $this->latitude])
-			// ->andFilterWhere(['like', 'longitude', $this->longitude])
 			->andFilterWhere(['created_by' => $this->created_by])
 			->andFilterWhere(['updated_by' => $this->updated_by])
 			->andFilterWhere(['owner' => $this->owner])
-			->andFilterWhere(['status' => $this->status]);
+			->andFilterWhere(['status' => $this->status])
+			->andFilterWhere(['>=', 'time', $this->time])
+			->andFilterWhere(['<', 'time_to', $this->time_to]);
 
 		return $dataProvider;
 	}

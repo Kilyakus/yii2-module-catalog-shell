@@ -7,7 +7,7 @@ use yii\web\Response;
 use yii\helpers\ArrayHelper;
 use bin\admin\models\CField;
 use bin\admin\models\Photo;
-use kilyakus\imageprocessor\Image;
+use kilyakus\helper\media\Image;
 use bin\forum\src\models\Category as ForumCategory;
 use bin\forum\src\models\Forum;
 
@@ -36,6 +36,8 @@ class AController extends \bin\admin\controllers\CategoryController
         if(!($model = $Category::findOne($id))){
             $model = new $Category;
         }
+        
+        Yii::$app->user->returnUrl = $_SERVER['REQUEST_URI'];
 
         return $this->render('@kilyakus/shell/directory/views/a/fields', [
             'model' => $model,

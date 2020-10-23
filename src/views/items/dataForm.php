@@ -1,6 +1,6 @@
 <?php
 use yii\helpers\Html;
-use kilyakus\imageprocessor\Image;
+use kilyakus\helper\media\Image;
 use kilyakus\web\widgets as Widget;
 
 $this->registerCss("
@@ -110,7 +110,7 @@ $this->registerCss("
 
                         $options = [];
 
-                        foreach(explode(',',$field->options) as $option){
+                        foreach(explode(',',str_replace(', ', ',', $field->options)) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
 
@@ -141,7 +141,7 @@ $this->registerCss("
                     
                     if($field->options){
                         $options = [];
-                        foreach(explode(',',$field->options) as $option){
+                        foreach(explode(',',str_replace(', ', ',', $field->options)) as $option){
                             $options[\yii\helpers\Inflector::slug($option)] = Yii::t('easyii', $option);
                         }
 
@@ -171,7 +171,7 @@ $this->registerCss("
                 elseif ($field->type === 'radio') {
                     if($field->options){
 
-                        foreach(explode(',',$field->options) as $option){
+                        foreach(explode(',',str_replace(', ', ',', $field->options)) as $option){
                             $checked = $value && (is_array($value) ? in_array($option, $value) : \yii\helpers\Inflector::slug($option) == $value);
                             $options .= '<label class="d-flex align-items-center m-0 p-2">'. Html::radio("Data[{$field->name}][]", $checked, ['class' => 'switch','value' => $option,]) .'<span class="ml-10">'. $option .'</span></label>';
                         }

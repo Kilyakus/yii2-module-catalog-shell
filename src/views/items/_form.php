@@ -6,13 +6,13 @@ use yii\helpers\ArrayHelper;
 use yii\widgets\Pjax;
 use yii\widgets\ActiveForm;
 
-use kartik\daterange\DateRangePicker;
+use kilyakus\widget\daterange\DateRangePicker;
 
 use kilyakus\web\widgets as Widget;
 
 use kilyakus\widget\maps\GoogleMaps;
 use bin\admin\components\API;
-use kilyakus\imageprocessor\Image;
+use kilyakus\helper\media\Image;
 use bin\admin\helpers\IpHelper;
 use kilyakus\package\seo\widgets\SeoForm;
 use kilyakus\package\translate\widgets\TranslateForm;
@@ -28,49 +28,69 @@ $this->registerAssetBundle(FieldsAsset::className());
 
 $settings = $this->context->module->settings;
 $module = $this->context->module->id;
-$class = API::getClass($class,'models','Item');
+// $class = API::getClass($class,'models','Item');
 
 if(count($model->category->types)){
     $types = ArrayHelper::map($model->category->types,'type_id','title');
 }
-$model->parent_class = ($model->parent_class ? $model->parent_class : $class);
-?>
+// $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
+
+$submoduleClass = $settings['submoduleClass']; ?>
+
 <?php Pjax::begin(['enablePushState' => false,]); ?>
 <?php $form = ActiveForm::begin([
     'options' => ['data-pjax' => true, 'data-pjax-problem' => true,'enctype' => 'multipart/form-data', 'class' => 'model-form'],
 ]); ?>
 
-<?php if($settings['parentSubmodule'] && IS_MODER) : ?>
-    <div class="row">
+<?php if($submoduleClass && IS_MODER) : ?>
+    <?php if($cats = $submoduleClass::find()->all()){
+        $dats = [];
+        foreach ($cats as $key => $cat) {
+            $dats[$cat->primaryKey] = $cat->title;
+        }
+    } ?>
+    <?= $form->field($model, 'parent_class')->hiddenInput(['value' => $settings['submoduleClass']])->label(false); ?>
+    <?= $form->field($model, 'parent_id')->widget(Widget\Select2::classname(), [
+        'data' => $dats,
+        'pluginOptions' => [
+            'placeholder' => Yii::t('easyii', 'Select'),
+            'allowClear' => true,
+        ]
+    ]); ?>
+    <!-- <div class="row">
         <div class="col-xs-12 col-md-6">
-            <?= $form->field($model, 'parent_class')->widget(Widget\Select2::classname(), [
-                'data' => $model->submodules,
-                'pluginOptions' => [
-                    'placeholder' => Yii::t('easyii', 'Select'),
-                    'allowClear' => true,
-                ]
-            ]); ?>
+            <?php
+            //  $form->field($model, 'parent_class')->widget(Widget\Select2::classname(), [
+            //     'data' => $model->submodules,
+            //     'pluginOptions' => [
+            //         'placeholder' => Yii::t('easyii', 'Select'),
+            //         'allowClear' => true,
+            //     ]
+            // ]);
+            ?>
         </div>
         <div class="col-xs-12 col-md-6">
-            <?= $form->field($model, 'parent_id')->widget(Widget\DepDrop::classname(), [
-                'data' => (($parent_class = $model->parent_class) && $model->parent_id) ? [$model->parent_id => $parent_class::findOne($model->parent_id)->title] : ($parent ? [$parent => $class::findOne($parent)->title] : null),
-                'type' => Widget\DepDrop::TYPE_SELECT2,
-                'select2Options' => [
-                    'pluginOptions' => ['value' => $model->parent_id ? $model->parent_id : $parent, 'allowClear' => true,'multiple' => false,]
-                ],
-                'pluginOptions' => [
-                    'depends' => ['item-parent_class'],
-                    'url' => Url::to(['parent-item']),
-                    'loadingText' => 'Loading ...',
-                    'placeholder' => $link['select'][''],
-                ]
-            ]); ?>
+            <?php 
+            // $form->field($model, 'parent_id')->widget(Widget\DepDrop::classname(), [
+            //     'data' => (($parent_class = $model->parent_class) && $model->parent_id) ? [$model->parent_id => $parent_class::findOne($model->parent_id)->title] : ($parent ? [$parent => $class::findOne($parent)->title] : null),
+            //     'type' => Widget\DepDrop::TYPE_SELECT2,
+            //     'select2Options' => [
+            //         'pluginOptions' => ['value' => $model->parent_id ? $model->parent_id : $parent, 'allowClear' => true,'multiple' => false,]
+            //     ],
+            //     'pluginOptions' => [
+            //         'depends' => ['item-parent_class'],
+            //         'url' => Url::to(['parent-item']),
+            //         'loadingText' => 'Loading ...',
+            //         'placeholder' => $link['select'][''],
+            //     ]
+            // ]); 
+            ?>
         </div>
-    </div>
+    </div> -->
 <?php endif; ?>
 
 <?php if(count($model->categories) || $settings['enableCategory']) : ?>
-    <?=$form->field($model, 'category_id')->label(Yii::t('easyii','Categories'))->widget(Widget\Select2::classname(),
+    <?= $form->field($model, 'category_id[]')->label(Yii::t('easyii','Categories'))->widget(Widget\Select2::classname(),
         [
             'data' => $model->categories,
             'options' => [
@@ -85,12 +105,12 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
         ]);
     ?>
 <?php endif; ?>
-<?= TranslateForm::widget(['form' => $form, 'model' => $model, 'attribute' => 'title']) ?>
-<div class="row">
-    <?php if(IS_MODER) : ?>
-        <?= $form->field($model, 'slug', ['options' => ['class' => 'col-xs-12 col-md-6']])->input('text',['placeholder' => 'Leave the field blank for automatic URL generation.']) ?>
-    <?php endif; ?>
-</div>
+
+<?= $form->field($model, 'title')->label(false)->widget(TranslateForm::classname(), []); ?>
+
+<?php if(IS_MODER) : ?>
+    <?= $form->field($model, 'slug')->input('text',['placeholder' => 'Leave the field blank for automatic URL generation.']) ?>
+<?php endif; ?>
 
 <?php if(count($model->category->types)) : ?>
     <?=$form->field($model, 'type_id')->label(Yii::t('easyii','Классификация'))->widget(Widget\Select2::classname(),
@@ -106,17 +126,6 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
     ?>
 <?php endif; ?>
 
-<?php if($settings['itemThumb']) : ?>
-    <div class="row">
-        <div class="col-xs-12 col-sm-3 col-md-five">
-            <?= $form->field($model, 'image')->widget(Widget\Cutter::className(), []) ?>
-        </div>
-        <div class="col-xs-12 col-sm-3 col-md-five">
-            <?= $form->field($model, 'preview')->widget(Widget\Cutter::className(), []) ?>
-        </div>
-    </div>
-<?php endif; ?>
-
 <?php if($settings['enablePhotos']) : ?>
     <?= \bin\admin\widgets\ModulePhotos\ModulePhotos::widget(['model' => $model])?>
 <?php endif; ?>
@@ -124,6 +133,28 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
 <?php if($settings['enableMaps']) : ?>
     <div class="row">
         <div class="col-xs-12 col-md-4">
+            <?php 
+            // echo $form->field($model, 'region_id')->widget(Widget\Select2::classname(), [
+            //     'data' => $model->region_id ? (Geo::region($model->region_id) ? ArrayHelper::map(Geo::region($model->region_id), 'id', 'name_ru') : null) : null,
+            //     'options' => [
+            //         'id' => 'item-region_id',
+            //         'value' => $model->region_id,
+            //         'placeholder' => Yii::t('easyii','Search for a region ...')
+            //     ],
+            //     'pluginOptions' => [
+            //         'allowClear' => false,
+            //         'minimumInputLength' => 3,
+            //         'ajax' => [
+            //             'url' => \yii\helpers\Url::to(['/maps/region-list']),
+            //             'dataType' => 'json',
+            //             'data' => new JsExpression('function(params) { return {q:params.term}; }')
+            //         ],
+            //         'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+            //         'templateResult' => new JsExpression('function(region) { return region.text; }'),
+            //         'templateSelection' => new JsExpression('function (region) { return region.text; }'),
+            //     ],
+            // ])->label(Yii::t('easyii/' . $module, 'Region'));
+            ?>
             <?= $form->field($model, 'city_id')->widget(Widget\Select2::classname(), [
                 'data' => $model->city_id ? (Geo::city($model->city_id) ? ArrayHelper::map(Geo::city($model->city_id), 'id', 'name_ru') : null) : null,
                 'options' => [
@@ -143,7 +174,7 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
                     'templateResult' => new JsExpression('function(city) { return city.text; }'),
                     'templateSelection' => new JsExpression('function (city) { return city.text; }'),
                 ],
-            ])->label(Yii::t('easyii/' . $module,'City')); ?>
+            ])->label(Yii::t('easyii/' . $module, 'City')); ?>
             <div class="row">
                 <?= $form->field($model, 'latitude',['options' => ['class' => 'col-xs-12 col-md-6']])->input('text',['readonly' => true])->label(false) ?>
                 <?= $form->field($model, 'longitude',['options' => ['class' => 'col-xs-12 col-md-6']])->input('text',['readonly' => true])->label(false) ?>
@@ -151,7 +182,21 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
         </div>
 
         <div class="col-xs-12 col-md-8">
-            <?php $address = \app\controllers\MapsController::genAddress($model); ?>
+            <?php
+            $htmlContent = Html::tag('h4',$model->title);
+            $htmlContent .= Html::img(Image::thumb($model->image, 340,120),['class' => 'w-100 img-rounded mb-2']);
+            $htmlContent .= Widget\Button::widget([
+                'type' => Widget\Button::TYPE_SECONDARY,
+                'title' => Yii::t('easyii', 'Open in new tab'),
+                'icon' => 'fa fa-external-link-alt',
+                'url' => Url::toRoute(['/catalog/view','slug' => $model->slug]),
+                'block' => true,
+                'options' => [
+                    'data-pjax' => 0,
+                    'target' => '_blank'
+                ]
+            ]);
+            ?>
             <?= GoogleMaps::widget([
                 'geocode' => true,
                 'userLocation' => [
@@ -161,9 +206,8 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
                         'latitude' => $model->latitude,
                         'longitude' => $model->longitude,
                         'address' => $model->latitude . ', ' . $model->longitude,
-                        // 'address' => $address,
                     ],
-                    'htmlContent' => '<h4 class="m-0 mb-10">'.$model->title.'</h4><p class="text-muted">Адрес: '.$address.'</p><div class="h-align"><a href="'.Url::toRoute(['/catalog/view','slug' => $model->slug]).'" class="col-xs-12 btn btn-default btn-block text-center" target="_blank">Просмотреть карточку места</a></div>',
+                    'htmlContent' => $htmlContent,
                 ],
                 'googleMapsOptions' => [
                     'zoom' => 9,
@@ -179,7 +223,7 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
     </div>
 <?php endif; ?>
 
-<?= TranslateForm::widget(['form' => $form, 'model' => $model, 'attribute' => 'description']) ?>
+<?= $form->field($model, 'description')->label(false)->widget(TranslateForm::classname(), []); ?>
 
 <?php if(count($dataForm) == 1) : ?>
     <div class="row" style="margin:0;">
@@ -193,24 +237,32 @@ $model->parent_class = ($model->parent_class ? $model->parent_class : $class);
     <?= $form->field($model, 'discount') ?>
 <?php endif; ?>
 
+
 <?php 
-$model->time = date('Y-m-d h:i',($model->time ? $model->time : time()));
-$model->time_to = date('Y-m-d h:i',($model->time_to ? $model->time_to : time()));
-?>
-<?= $form->field($model, 'time_to')->widget(DateRangePicker::classname(), [
+$model->time = date(Yii::$app->formatter->datetimeFormat, ($model->time ? $model->time : time()));
+$model->time_to = date(Yii::$app->formatter->datetimeFormat, ($model->time_to ? $model->time_to : time()));
+
+echo $form->field($model, 'date_range')->widget(DateRangePicker::classname(), [
     'useWithAddon'=>true,
     'convertFormat'=>true,
     'startAttribute' => 'time',
     'endAttribute' => 'time_to',
     'pluginOptions'=>[
-        'timePicker'=>true,
+        'timePicker' => true,
         'timePickerIncrement'=>15,
         'showDropdowns'=>true,
-        'locale'=>['format'=>'Y-m-d h:i']
+        'locale' => [
+            'format' => Yii::$app->formatter->datetimeFormat,
+            'cancelLabel' => Yii::t('easyii', 'Clear'),
+        ]
+    ],
+    'options' => [
+        'value' => $model->time . ' - ' . $model->time_to,
     ],
     'presetDropdown'=>false,
-    'hideInput'=>true
-]); ?>
+    'hideInput' => true
+]);
+ ?>
 
 <?php if($model->category && count($contacts = $model->category->contacts)) : ?>
     <?php foreach ($contacts as $contact) : ?>
@@ -289,7 +341,9 @@ $this->registerJs($formatJs, \yii\web\view::POS_HEAD);
         ],
     ])->label(Yii::t('user','Permissions')); ?>
 <?php endif; ?>
+<?php endif; ?>
 
+<?php if(IS_MODER) : ?>
     <?= SeoForm::widget(['model' => $model]) ?>
 <?php endif; ?>
 

@@ -10,6 +10,7 @@ class VideoObject extends \kilyakus\components\api\Object
 {
     public $moduleName;
     public $file;
+    public $title;
     public $description;
 
     public function box($width, $height){

@@ -108,8 +108,11 @@ class ItemObject extends \kilyakus\components\api\Object
         foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
         if(!$this->_category){
-            $this->_category = [];
-            $this->_category = new $CategoryObject($Category::find()->where(['category_id' => $this->model->category_id])->one());
+            if(!$this->model->category_id){
+                $this->_category = [];
+            }else{
+                $this->_category = new $CategoryObject($Category::find()->where(['category_id' => $this->model->category_id])->one());
+            }
         }
         return $this->_category;
     }
@@ -175,7 +178,7 @@ class ItemObject extends \kilyakus\components\api\Object
         if(!$this->_photos){
             $this->_photos = [];
 
-            $photos = Photo::find()->where(['and',['class' => $Item::className(), 'item_id' => $this->id], ['status' => Photo::STATUS_ON]]);
+            $photos = Photo::find()->where(['and',['class' => $Item::className(), 'item_id' => $this->id], ['status' => Photo::STATUS_ON]])->orderBy(['main' => SORT_DESC, 'order_num' => SORT_DESC]);
 
             foreach($photos->all() as $model){
                 if($model->status == Photo::STATUS_ON){
@@ -183,6 +186,7 @@ class ItemObject extends \kilyakus\components\api\Object
                 }
             }
         }
+
         return $this->_photos;
     }
 

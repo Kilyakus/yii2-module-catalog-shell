@@ -20,7 +20,7 @@ class CategoryObject extends \kilyakus\components\api\Object
     private $_items;
 
     public function getTitle(){
-        return LIVE_EDIT ? API::liveEdit($this->model->title, $this->editLink) : $this->model->title;
+        return LIVE_EDIT ? API::liveEdit($this->model->translate->title, $this->editLink) : $this->model->translate->title;
     }
 
     public function getPhotos(){

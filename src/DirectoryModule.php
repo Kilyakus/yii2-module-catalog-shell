@@ -7,8 +7,10 @@ class DirectoryModule extends \kilyakus\modules\components\Module
     
     public $settings = [
         'enableMenu' => true,
+        'enableSubcategory' => false,
+        'subcategoryClass' => '',
         'enableSubmodule' => false,
-        'parentSubmodule' => '',
+        'submoduleClass' => '',
         'enableCategory' => true,
         'categoryThumb' => true,
         'categoryMultiple' => false,
