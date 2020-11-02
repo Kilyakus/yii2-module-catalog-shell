@@ -39,7 +39,7 @@ $submoduleClass = $settings['submoduleClass']; ?>
 
 <?php Pjax::begin(['enablePushState' => false,]); ?>
 <?php $form = ActiveForm::begin([
-    'options' => ['data-pjax' => true, 'data-pjax-problem' => true,'enctype' => 'multipart/form-data', 'class' => 'model-form'],
+    'options' => ['data-pjax' => true, 'data-pjax-problem' => true, 'enctype' => 'multipart/form-data', 'class' => 'model-form'],
 ]); ?>
 
 <?php if($submoduleClass && IS_MODER) : ?>
@@ -92,9 +92,11 @@ $submoduleClass = $settings['submoduleClass']; ?>
 <?php if(count($model->categories) || $settings['enableCategory']) : ?>
     <?= $form->field($model, 'category_id[]')->label(Yii::t('easyii','Categories'))->widget(Widget\Select2::classname(),
         [
-            'data' => $model->categories,
+            'data' => $model->allCategoriesTree,
             'options' => [
-                'placeholder' => Yii::t('easyii','Change category'), 'value' => $assign ? $assign : $category->category_id, 'multiple' => $settings['categoryMultiple'],
+                'placeholder' => Yii::t('easyii','Change category'),
+                'value' => !empty($assign) ? (count($assign) > 1 ? $assign : $assign[0]) : $category->category_id,
+                'multiple' => $settings['categoryMultiple'],
                 'options' => [
                     // $model->category_id => ['disabled' => true],
                 ]

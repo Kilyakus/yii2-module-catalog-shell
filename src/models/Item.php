@@ -11,14 +11,15 @@ use kilyakus\package\seo\behaviors\SeoBehavior;
 use kilyakus\package\translate\behaviors\TranslateBehavior;
 use kilyakus\package\taggable\behaviors\Taggable;
 use kilyakus\cutter\behaviors\CutterBehavior;
+use kilyakus\widget\daterange\DateRangeBehavior;
 use bin\admin\models\Album;
 use bin\admin\models\Photo;
 use bin\admin\models\Video;
 use bin\admin\models\Comment;
 use bin\admin\models\CType;
 use bin\admin\models\CField;
-use bin\admin\models\Favorite;
-use bin\admin\models\FavoriteAssign;
+use kilyakus\package\favorite\models\Favorite;
+use kilyakus\package\favorite\models\FavoriteAssign;
 use bin\user\models\User;
 use bin\user\models\UserSearch;
 use yii\data\ActiveDataProvider;
@@ -193,79 +194,91 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 	public function attributeLabels()
 	{
 		return [
-			'parent_class' => Yii::t('easyii', 'Module'),
+			'parent_class'	=>	Yii::t('easyii', 'Module'),
 
-			'category_id' => Yii::t('easyii', 'Category'),
-			'title' => Yii::t('easyii', 'Title'),
-			'preview' => Yii::t('easyii', 'Change main photo'),
-			'image' => Yii::t('easyii', 'Upload background and main photo'),
-			'description' => Yii::t('easyii', 'Description'),
-			'available' => Yii::t('easyii/' . $this->module->name, 'Available'),
-			'price' => Yii::t('easyii/' . $this->module->name, 'Price'),
-			'discount' => Yii::t('easyii/' . $this->module->name, 'Discount'),
-			'time' => Yii::t('easyii', 'Date'),
-			'time_to' => Yii::t('easyii', 'Date'),
-			'slug' => Yii::t('easyii', 'Slug'),
-			'owner' => IS_MODER ? Yii::t('easyii/' . $this->module->name, 'Owner') : Yii::t('easyii', 'Authorize yourself as the owner'),
-			'gradient' => Yii::t('easyii/' . $this->module->name, 'Choose Color'),
-			'gradient_to' => Yii::t('easyii/' . $this->module->name, 'To Color'),
+			'category_id'	=>	Yii::t('easyii', 'Category'),
+			'title'			=>	Yii::t('easyii', 'Title'),
+			'preview'		=>	Yii::t('easyii', 'Change main photo'),
+			'image'			=>	Yii::t('easyii', 'Upload background and main photo'),
+			'description'	=>	Yii::t('easyii', 'Description'),
+			'available'		=>	Yii::t('easyii/' . $this->module->name, 'Available'),
+			'price'			=>	Yii::t('easyii/' . $this->module->name, 'Price'),
+			'discount'		=>	Yii::t('easyii/' . $this->module->name, 'Discount'),
+			'time'			=>	Yii::t('easyii', 'Date'),
+			'time_to'		=>	Yii::t('easyii', 'Date'),
+			'slug'			=>	Yii::t('easyii', 'Slug'),
+			'owner'			=>	IS_MODER ? Yii::t('easyii/' . $this->module->name, 'Owner') : Yii::t('easyii', 'Authorize yourself as the owner'),
+			'gradient'		=>	Yii::t('easyii/' . $this->module->name, 'Choose Color'),
+			'gradient_to'	=>	Yii::t('easyii/' . $this->module->name, 'To Color'),
 
-			'continent' => Yii::t('easyii/' . $this->module->name,'Continent'),
-			'country' => Yii::t('easyii/' . $this->module->name,'Country'),
-			'region' => Yii::t('easyii/' . $this->module->name,'Region'),
-			'city' => Yii::t('easyii/' . $this->module->name,'City'),
-			'street' => Yii::t('easyii/' . $this->module->name,'Street'),
-			'number' => Yii::t('easyii/' . $this->module->name,'Number'),
+			'continent'		=>	Yii::t('easyii/' . $this->module->name,'Continent'),
+			'country'		=>	Yii::t('easyii/' . $this->module->name,'Country'),
+			'region'		=>	Yii::t('easyii/' . $this->module->name,'Region'),
+			'city'			=>	Yii::t('easyii/' . $this->module->name,'City'),
+			'street'		=>	Yii::t('easyii/' . $this->module->name,'Street'),
+			'number'		=>	Yii::t('easyii/' . $this->module->name,'Number'),
 
-			'latitude' => Yii::t('easyii', 'Latitude'),
-			'longitude' => Yii::t('easyii', 'Longitude'),
+			'latitude'		=>	Yii::t('easyii', 'Latitude'),
+			'longitude'		=>	Yii::t('easyii', 'Longitude'),
 			
-			'tagNames' => Yii::t('easyii', 'Tags'),
+			'tagNames'		=>	Yii::t('easyii', 'Tags'),
 		];
 	}
 
 	public function behaviors()
 	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
 		return [
-			'dateRangeBehavior' => [
-				'class' => \kilyakus\widget\daterange\DateRangeBehavior::className(),
-				'attribute' => 'date_range',
-				'dateStartAttribute' => 'time',
-				'dateEndAttribute' => 'time_to',
-			    // 'dateStartFormat' => Yii::$app->formatter->datetimeFormat,
-			    // 'dateEndFormat' => Yii::$app->formatter->datetimeFormat,
+			'categoriesBehavior'		=>	[
+				'class'					=>	\kilyakus\shell\directory\behaviors\CategoriesBehavior::className(),
+				'classCategory'			=>	$Category,
+				'classCategoryAssign'	=>	$CategoryAssign,
 			],
-			'seoBehavior' => SeoBehavior::className(),
-			'translateBehavior' => TranslateBehavior::className(),
-			'taggabble' => Taggable::className(),
-			'sluggable' => [
-				'class' => SluggableBehavior::className(),
-				'attribute' => 'title',
-				'ensureUnique' => true
+			'fieldsBehavior'		=>	[
+				'class'					=>	\kilyakus\shell\directory\behaviors\FieldsBehavior::className(),
+				'fieldsClass'			=>	\bin\admin\models\CField::className(),
+				'categoryClass'			=>	$Category,
 			],
-			'albumBehavior' => [
-                'class' => GuiBehavior::className(),
-                'model' => Album::className(),
-                'isRoot' => IS_USER,
-                'identity' => Yii::$app->user->identity->id,
-            ],
-			'photoBehavior' => [
-				'class' => GuiBehavior::className(),
-				'model' => Photo::className(),
-				'isRoot' => IS_MODER,
-				'identity' => Yii::$app->user->identity->id,
+			'dateRangeBehavior'		=>	[
+				'class'					=>	DateRangeBehavior::className(),
+				'attribute'				=>	'date_range',
+				'dateStartAttribute'	=>	'time',
+				'dateEndAttribute'		=>	'time_to',
+				// 'dateStartFormat'	=>	Yii::$app->formatter->datetimeFormat,
+				// 'dateEndFormat'		=>	Yii::$app->formatter->datetimeFormat,
 			],
-			// 'preview' => [
-			// 	'class' => CutterBehavior::className(),
-			// 	'attributes' => 'preview',
-			// 	'baseDir' => '/uploads/' . $this->module->name . '/previews',
-			// 	'basePath' => '@webroot/uploads/' . $this->module->name . '/previews',
+			'seoBehavior'			=>	SeoBehavior::className(),
+			'translateBehavior'		=>	TranslateBehavior::className(),
+			'taggabble'				=>	Taggable::className(),
+			'sluggable'				=>	[
+				'class'					=>	SluggableBehavior::className(),
+				'attribute'				=>	'title',
+				'ensureUnique'			=>	true
+			],
+			'albumBehavior'			=>	[
+				'class'					=>	GuiBehavior::className(),
+				'model'					=>	Album::className(),
+				'isRoot'				=>	IS_USER,
+				'identity'				=>	Yii::$app->user->identity->id,
+			],
+			'photoBehavior'			=>	[
+				'class'					=>	GuiBehavior::className(),
+				'model'					=>	Photo::className(),
+				'isRoot'				=>	IS_MODER,
+				'identity'				=>	Yii::$app->user->identity->id,
+			],
+			// 'preview'			=>	[
+			// 	'class'					=>	CutterBehavior::className(),
+			// 	'attributes'			=>	'preview',
+			// 	'baseDir'				=>	'/uploads/' . $this->module->name . '/previews',
+			// 	'basePath'				=>	'@webroot/uploads/' . $this->module->name . '/previews',
 			// ],
-			// 'image' => [
-			// 	'class' => CutterBehavior::className(),
-			// 	'attributes' => 'image',
-			// 	'baseDir' => '/uploads/' . $this->module->name . '/images',
-			// 	'basePath' => '@webroot/uploads/' . $this->module->name . '/images',
+			// 'image'				=>	[
+			// 	'class'					=>	CutterBehavior::className(),
+			// 	'attributes'			=>	'image',
+			// 	'baseDir'				=>	'/uploads/' . $this->module->name . '/images',
+			// 	'basePath'				=>	'@webroot/uploads/' . $this->module->name . '/images',
 			// ],
 		];
 	}
@@ -314,9 +327,9 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 		if($this->isAttributeChanged('category_id') || $this->isNewRecord)
 		{
-			if(is_array($this->category_id) || is_object($this->category_id))
+			if(is_array($this->cacheCategory) || is_object($this->cacheCategory))
 			{
-				$this->category_id = $this->category_id[0];
+				$this->category_id = $this->cacheCategory[0];
 			}
 		}
 
@@ -417,7 +430,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 				$this->insertCategoriesValue(trim($categoryId));
 			}
 		}else{
-			$this->insertCategoriesValue($this->cacheCategory);
+			$this->insertCategoriesValue(trim($this->cacheCategory));
 		}
 	}
 
@@ -525,32 +538,32 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		return $Category::find()->where(['category_id' => ($this->category_id ? $this->category_id : Yii::$app->request->get('id'))])->one();
 	}
 
-	public function getCategories()
-	{
-		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+	// public function getCategories()
+	// {
+	// 	foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
-		$categories = $key = $val = array();
+	// 	$categories = $key = $val = array();
 
-		if(Yii::$app->controller->module->module->id != 'admin'){
-			$status = false;
-		}else{
-			$status = true;
-		}
-		$trees = $Category::tree($status);
-		$categories = $Category::checkCategories($trees);
-		$categories = $categories ? $Category::filterCategories($categories) : null;
+	// 	if(Yii::$app->controller->module->module->id != 'admin'){
+	// 		$status = false;
+	// 	}else{
+	// 		$status = true;
+	// 	}
+	// 	$trees = $Category::tree($status);
+	// 	$categories = $Category::checkCategories($trees);
+	// 	$categories = $categories ? $Category::filterCategories($categories) : null;
 	   
-		return $categories;
-	}
+	// 	return $categories;
+	// }
 
-	public function get_Categories()
-	{
-		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+	// public function get_Categories()
+	// {
+	// 	foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
-		$categories = $Category::find()->where(['category_id' => ArrayHelper::getColumn($CategoryAssign::findAll(['item_id' => $this->primaryKey]),'category_id')])->all();
+	// 	$categories = $Category::find()->where(['category_id' => ArrayHelper::getColumn($CategoryAssign::findAll(['item_id' => $this->primaryKey]),'category_id')])->all();
 	   
-		return $categories;
-	}
+	// 	return $categories;
+	// }
 
 	public function getImage($width = null, $height = null)
 	{
@@ -582,8 +595,6 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 	public function getVideos()
 	{
-		// return $this->hasMany(Video::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
-		
 		return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->andWhere(['not', ['video' => 'null']])->orderBy(['main' => SORT_DESC, 'order_num' => SORT_DESC]);
 	}
 
@@ -667,35 +678,6 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		$dataProvider->query->where(['id' => $members]);
 
 		return $dataProvider->query->all();
-	}
-
-	public function getFields()
-	{
-
-		$fields = [];
-
-		// foreach (self::getCategories() as $key => $category) {
-		// 	 foreach ($parents as $parent) {
-		// 		 $fields = CField::find()->where(['or',['category_id' => $parent->category_id],['is','category_id', new \yii\db\Expression('null')]])->andFilterWhere(['class' => $categoryClass])->all();
-		// 		 foreach ($fields as $field) {
-		// 			 $this->_fields[$field->field_id] = $field;
-		// 		 }
-		// 	 }
-		// }
-
-		// if($this->parent){
-		// 	$parents = $this->getParents($this->category_id);
-		// }
-
-		// $fields = CField::find()->where(['or',['category_id' => $this->category_id],['is','category_id', new \yii\db\Expression('null')]])->andFilterWhere(['class' => $categoryClass])->all();
-		// foreach ($fields as $field) {
-		// 	$this->_fields[$field->field_id] = $field;
-		// }
-		
-		// usort($this->_fields, function($a, $b){
-		// 	return ($a['category_id'] - $b['category_id']);
-		// });
-		return $fields;
 	}
 
 	public function getSubmodules()

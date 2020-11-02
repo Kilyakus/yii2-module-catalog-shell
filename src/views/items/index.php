@@ -70,7 +70,7 @@ $gridColumns = [
 		'vAlign' => 'middle',
 		'value' => function ($model) {
 
-			foreach ($model->_categories as $category) {
+			foreach ($model->categories as $category) {
 				$categories[] = [
 					'label' => $category->title,
 					'image' => Image::thumb($category->icon ? $category->icon : $category->image,30,30),
