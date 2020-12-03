@@ -3,12 +3,13 @@ namespace kilyakus\shell\directory\controllers;
 
 use Yii;
 use yii\db\Query;
+use yii\web\Response;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
-use bin\user\filters\AccessRule;
 use yii\helpers\Url;
 use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
+use bin\user\filters\AccessRule;
 use bin\admin\components\API;
 use kilyakus\helper\media\Image;
 use kilyakus\modules\behaviors\StatusController;
@@ -192,8 +193,9 @@ class ItemsController extends \bin\admin\components\Controller
 		]);
 	}
 
-	public function actionItemsList($q = null, $id = null) {
-		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+	public function actionItemsList($q = null, $id = null)
+	{
+		Yii::$app->response->format = Response::FORMAT_JSON;
 		$out = ['results' => ['id' => '', 'text' => ''],'parents' => []];
 		$class = new $this->itemClass();
 
@@ -219,13 +221,17 @@ class ItemsController extends \bin\admin\components\Controller
 
 		$post = Yii::$app->request->post('Item');
 
-		$category = $post['category_id'] ? (is_array($post['category_id']) ? $post['category_id'][0] : $post['category_id']) : ($id ? $id : (Yii::$app->request->getQueryParam('id') ? Yii::$app->request->getQueryParam('id') : null)); 
+		$category = $post['category_id'] ? (is_array($post['category_id']) ? $post['category_id'][0] : $post['category_id']) : $id;
 
 		if(!($category = $categoryClass::findOne($category)) && $this->module->settings['enableCategory']){
 			// return $this->redirect(['/admin/'.$this->module->id]);
 		}
 
 		$model = new $itemClass;
+
+		// $model->category_id = $category->category_id;
+
+		$assign = $category->category_id;
 
 		$parents = $categoryClass::getParents($id) ? ArrayHelper::getColumn($categoryClass::getParents($id),'category_id') : [];
 
@@ -235,15 +241,14 @@ class ItemsController extends \bin\admin\components\Controller
 
 		if ($model->load(Yii::$app->request->post())) {
 
-			$model->category_id = $category->category_id;
-
 			$model->data = Yii::$app->request->post('Data');
 
 			$model->contacts = Yii::$app->request->post('Contacts');
 
 			$model->status = 0;
 
-			if ($model->save()) {
+			if ($model->save())
+			{
 				$this->flash('success', Yii::t('easyii/' . $this->moduleName, 'Item created'));
 				// if(!Yii::$app->request->isAjax){
 					if($this->module->module->id != 'admin' && $this->redirects['create']){
@@ -274,8 +279,8 @@ class ItemsController extends \bin\admin\components\Controller
 			return $this->rendering('create', [
 				'model' => $model,
 				'category' => $category,
-				'categories' => self::getCategories(),
-				'assign' => $category->category_id,
+				// 'categories' => self::getCategories(),
+				'assign' => $assign,
 				'breadcrumbs' => self::getBreadcrumbs($id),
 				'dataForm' => self::getItemFields($cats),
 				'link' => self::generateLink($model),
@@ -298,8 +303,6 @@ class ItemsController extends \bin\admin\components\Controller
 		$categories = $categoryClass::find()->where(['category_id' => $this->getCategories($id)])->all();
 
 		if ($model->load(Yii::$app->request->post())) {
-
-			$post = Yii::$app->request->post('Item');
 
 			if(Yii::$app->request->post('Data')){
 				$model->data = Yii::$app->request->post('Data');
@@ -332,9 +335,9 @@ class ItemsController extends \bin\admin\components\Controller
 			return $this->rendering('edit', [
 				'model' => $model,
 				'categories' => $model->categories,
-				'assign' => $this->getCategories($id),
+				'assign' => $model->categoriesKeys, //$this->getCategories($id)
 				'breadcrumbs' => $this->getBreadcrumbs($id),
-				'dataForm' => self::getItemFields($this->getCategories($id), $model->data),
+				'dataForm' => self::getItemFields($model->categoriesKeys, $model->data), //$this->getCategories($id)
 				'link' => self::generateLink($model),
 				'parent' => $parent,
 				'class' => $class,
@@ -355,7 +358,7 @@ class ItemsController extends \bin\admin\components\Controller
 
 		if (isset($post['hasEditable'])) {
 
-			\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+			Yii::$app->response->format = Response::FORMAT_JSON;
 
 			if ($model->load($post)) {
 
@@ -583,7 +586,13 @@ class ItemsController extends \bin\admin\components\Controller
 
 			if ($parent != null && count($list) > 0) {
 				foreach ($list as $i => $module) {
-					$children[$module['category_id']] = $module['title'];
+					if(is_array($module['category_id']) || is_object($module['category_id'])){
+						foreach ($module['category_id'] as $key => $value) {
+							$children[$value] = $module['title'];
+						}
+					}else{
+						$children[$module['category_id']] = $module['title'];
+					}
 				}
 			}
 		}else{
@@ -616,7 +625,7 @@ class ItemsController extends \bin\admin\components\Controller
 
 	public function actionParentItem()
 	{
-		Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+		Yii::$app->response->format = Response::FORMAT_JSON;
 		$out = [];
 		if (isset($_POST['depdrop_parents'])) {
 			$id = end($_POST['depdrop_parents']);
@@ -642,7 +651,7 @@ class ItemsController extends \bin\admin\components\Controller
 	{
 		$categoryClass = $this->categoryClass;
 
-		$breadcrumbs = ArrayHelper::map($categoryClass::findAll(self::getCategories($id)),'category_id','title');
+		$breadcrumbs = ArrayHelper::map($categoryClass::findAll(self::getCategories($id)),'category_id','translate.title');
 
 		return $breadcrumbs;
 	}

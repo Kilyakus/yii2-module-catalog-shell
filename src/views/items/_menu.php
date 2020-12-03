@@ -23,11 +23,12 @@ if($settings['enableCategory']){
 	}
 
 	if(count($breadcrumbs) <= 1){
-		$nav[] = [
-			'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '<i class="fa fa-list"></i>&nbsp; ') . ($category ? $category->title : Yii::t('easyii', 'All Records')),
-			'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $category->primaryKey, 'class' => $class, 'parent' => $parent]),
-			'active' => ($action === 'index'),
-		];
+		foreach ($breadcrumbs as $key => $breadcrumb){
+			$nav[] = [
+				'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $breadcrumb,
+				'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $key, 'class' => $class, 'parent' => $parent]),
+			];
+		}
 	}else{
 		$childrens = [];
 		foreach ($breadcrumbs as $key => $breadcrumb){

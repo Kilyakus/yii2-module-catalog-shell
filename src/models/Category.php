@@ -7,6 +7,7 @@ use bin\admin\models\CType;
 use bin\admin\models\CContact;
 use bin\admin\models\Photo;
 use bin\admin\models\Video;
+use kilyakus\helper\media\Image;
 
 class Category extends \bin\admin\models\CategoryModel
 {
@@ -62,6 +63,15 @@ class Category extends \bin\admin\models\CategoryModel
         }
     }
 
+    public function getImage($width = null, $height = null)
+    {
+        if($width != null || $height != null){
+            return Image::thumb($this->image, $width, $height);
+        }
+        
+        return $this->image;
+    }
+
     public function afterSave($insert, $attributes)
     {
         parent::afterSave($insert, $attributes);
@@ -74,13 +84,18 @@ class Category extends \bin\admin\models\CategoryModel
         $this->parseFields();
     }
 
+    public function getItemsAssigns($categories = [])
+    {
+        foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+        return $this->hasMany($CategoryAssign::className(), ['category_id' => $this->primaryKey()[0]]);
+    }
+
     public function getItems($categories = [])
     {
         foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
-        $query = ['item_id' => $CategoryAssign::findAll(['category_id' => ($categories ? $categories : $this->category_id)])];
-
-        return $Item::find()->where($query);
+        return $this->hasMany($Item::className(), ['category_id' => $this->primaryKey()[0]])->via('itemsAssigns');
     }
 
     public function getFieldList()

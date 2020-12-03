@@ -14,7 +14,6 @@ $this->title = Yii::t('easyii/infrastructure', 'Create item');
 		'_form', 
 		compact(
 			'model',
-			'categories',
 			'assign',
 			'dataForm',
 			'maps',

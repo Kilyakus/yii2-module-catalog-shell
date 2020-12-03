@@ -111,7 +111,7 @@ class ItemObject extends \kilyakus\components\api\Object
             if(!$this->model->category_id){
                 $this->_category = [];
             }else{
-                $this->_category = new $CategoryObject($Category::find()->where(['category_id' => $this->model->category_id])->one());
+                $this->_category = new $CategoryObject($this->model->category);
             }
         }
         return $this->_category;
@@ -123,9 +123,7 @@ class ItemObject extends \kilyakus\components\api\Object
 
         if(!$this->_categories){
 
-            $categories = $Category::find()->where(['category_id' => $CategoryAssign::findAll(['item_id' => $this->id])])->all();
-
-            foreach ($categories as $category) {
+            foreach ($this->model->categories as $category) {
                 $this->_categories[] = new $CategoryObject($category);
             }
         }

@@ -13,15 +13,6 @@ class FieldsBehavior extends Behavior
     public $fieldsClass;
     public $categoryClass;
 
-    // public function events()
-    // {
-    //     return [
-    //         ActiveRecord::EVENT_AFTER_INSERT => 'afterSave',
-    //         ActiveRecord::EVENT_AFTER_UPDATE => 'afterSave',
-    //         ActiveRecord::EVENT_BEFORE_DELETE => 'beforeDelete',
-    //     ];
-    // }
-
     // public function getFieldsAssigns()
     // {
     //     return $this->owner->hasMany(FieldsAssign::className(), ['item_id' => $this->owner->primaryKey()[0]])->where(['class' => get_class($this->owner)]);
@@ -38,28 +29,4 @@ class FieldsBehavior extends Behavior
 
         // return $this->owner->hasMany($fieldsClass::className(), ['favorite_id' => 'favorite_id'])->via('fieldsAssigns');
     }
-
-    // public function afterSave($insert, $attributes)
-    // {
-    //     if(parent::afterSave($insert, $attributes))
-    //     {
-
-    //     }else{
-    //         return false;
-    //     }
-    // }
-
-    // public function beforeDelete()
-    // {
-    //     if(parent::beforeDelete())
-    //     {
-
-    //     }else{
-    //         return false;
-    //     }
-    // }
-
-    // private function parseFields(){
-    //     $this->data = $this->data !== '' ? json_decode($this->data) : [];
-    // }
 }

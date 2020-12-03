@@ -14,7 +14,6 @@ $this->title = Yii::t('easyii', 'Edit'). ' ' .$model->title;
 		'_form', 
 		compact(
 			'model',
-			'categories',
 			'assign',
 			'dataForm',
 			'maps',

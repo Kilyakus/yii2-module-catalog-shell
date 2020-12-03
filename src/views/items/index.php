@@ -22,7 +22,7 @@ if($module == 'app'){
 	$module = 'admin';
 }
 $chatClass = $this->context->chatClass;
-$this->title = Yii::t('easyii/' . $moduleName, ucfirst($moduleName)) . (!$model->title ?: ': ' . $model->title);
+$this->title = Yii::t('easyii/' . $moduleName, ucfirst($moduleName)) . ': ' . (!$model->title ? Yii::t('easyii', 'All Records') : $model->title);
 
 $gridColumns = [
 	// ['class' => 'kilyakus\widget\grid\SerialColumn'],
@@ -72,7 +72,7 @@ $gridColumns = [
 
 			foreach ($model->categories as $category) {
 				$categories[] = [
-					'label' => $category->title,
+					'label' => $category->translate->title,
 					'image' => Image::thumb($category->icon ? $category->icon : $category->image,30,30),
 					'url' => Url::toRoute(['/' . $this->context->module->module->id . '/'. $this->context->module->id .'/a/edit', 'id' => $category->primaryKey]),
 				];
