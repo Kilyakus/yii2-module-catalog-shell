@@ -3,50 +3,25 @@ namespace kilyakus\shell\directory\models;
 
 use Yii;
 use bin\admin\components\API;
+use yii\db\Expression;
 use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
-use yii\behaviors\SluggableBehavior;
-use kilyakus\shell\directory\behaviors\CategoriesBehavior;
-use kilyakus\shell\directory\behaviors\FieldsBehavior;
-use kilyakus\shell\directory\behaviors\GeoBehavior;
-use kilyakus\shell\directory\behaviors\ParseBehavior;
-use kilyakus\package\gui\behaviors\GuiBehavior;
-use kilyakus\package\seo\behaviors\SeoBehavior;
-use kilyakus\package\translate\behaviors\TranslateBehavior;
-use kilyakus\package\taggable\behaviors\Taggable;
-use kilyakus\cutter\behaviors\CutterBehavior;
-use kilyakus\widget\daterange\DateRangeBehavior;
 use bin\admin\models\Album;
 use bin\admin\models\Photo;
-use bin\admin\models\Video;
 use bin\admin\models\Comment;
 use bin\admin\models\CType;
 use bin\admin\models\CField;
 use bin\admin\models\CContact;
-use kilyakus\package\favorite\models\Favorite;
 use kilyakus\package\favorite\models\FavoriteAssign;
 use bin\user\models\User;
 use bin\user\models\UserSearch;
 use yii\data\ActiveDataProvider;
-use yii\db\Expression;
 use kilyakus\helper\media\Image;
 
-class Item extends \kilyakus\modules\components\ActiveRecord
+use kilyakus\web\widgets as Widget;
+
+class Item extends \kilyakus\shell\directory\models\db\ItemActiveRecord
 {
-	public $transferClasses = [];
-
-	public $module;
-
-	const STATUS_OFF = 0;
-	const STATUS_ON = 1;
-	const STATUS_COPY = 2;
-	const STATUS_ARCHIVE = 2;
-
-	public static function tableName()
-	{
-		return 'catalog_items';
-	}
-
 	public function init()
 	{
 		$this->module = API::getModule($this::MODULE_NAME);
@@ -58,6 +33,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 				foreach ($items as $class) {
 					self::put($class);
 					$this->{$class} = $moduleDirectory . $this->module->name . '\\' . $group . '\\' . $class;
+					// class_alias($this->{$class}, $class);
 				}
 			}
 		}
@@ -65,207 +41,60 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		parent::init();
 	}
 
-	// public $selectCategories;
-
 	// public $category;
-	// public $priceFrom;
-	// public $priceTo;
 	// public $storageFrom;
 	// public $storageTo;
 	// public $text;
-	
+
 	// public $filters = [];
 
 	// public $sort;
 
 	// public $_fields = [];
 
-	// public function __get($name){
-	// 	if(array_key_exists($name, $this->_fields))
-	// 		return $this->_fields[$name];
-
-	// 	return parent::__get($name);
-	// }
-
-	// public function __set($name, $value){
-	// 	if(array_key_exists($name, $this->_fields))
-	// 		$this->_fields[$name] = $value;
-
-	// 	return parent::__set($name, $value);
-	// }
-
-	// public function put($attribute)
-	// {
-	// 	$this->_fields[$attribute] = null;
-	// 	$this->__set($attribute, null);
-	// }
-
 	public function __construct()
 	{
 		parent::__construct();
 
 		static::put('date_range');
-		
+
+		static::put('priceFrom');
+		static::put('priceTo');
+
 		static::put('nearby');
 		static::put('radius');
 		static::put('distance');
 
-		// 	$fields = CField::find()->where(['class' => $this->Category])->all();
-		// 	$fields = ArrayHelper::getColumn($fields,'name');
-		// 	$fields = array_unique($fields);
+		$cache = Yii::$app->cache;
+		$key = static::tableName().'_tree';
 
-		// 	foreach ($fields as $field) {
-		// 		static::put($field);
-		// 	}
+		$fields = $cache->get($key);
+		if(!$fields){
+			$fields = CField::find()->where(['class' => $this->categoryClass, 'status' => 1])->all();
+			$fields = ArrayHelper::getColumn($fields,'name');
+			$fields = array_unique($fields);
+			$cache->set($key, $fields, 3600);
+		}
+
+		foreach ($fields as $field) {
+			static::put($field);
+		}
 	}
 
 	public function rules()
 	{
-		$modelName = (new \ReflectionClass($this))->getShortName();
+		$rules = parent::rules();
 
-		$rules = [];
-		
-		if($this->module->settings['enableCategory']){
-			$rules[] = ['category_id', 'required', 'message' => Yii::t('easyii', 'Select category')];
+		$cache = Yii::$app->cache;
+		$key = static::tableName().'_tree';
+
+		$fields = $cache->get($key);
+
+		foreach ($fields as $field) {
+			$rules[] = [$field, 'safe'];
 		}
-
-		$rules[] = ['title', 'trim'];
-		$rules[] = [['parent_class','title','permission','gradient','gradient_to','latitude','longitude'], 'string', 'max' => 255];
-		$rules[] = ['parent_id', 'default'];
-		$rules[] = [['preview','image',], 'image'];
-		$rules[] = ['description', 'safe'];
-		$rules[] = ['price', 'number'];
-		$rules[] = ['discount', 'integer', 'max' => 100];
-		$rules[] = [['type_id','views','country_id','region_id','city_id','street_id','street_number_id', 'available', 'created_by', 'updated_by', 'owner', 'status'], 'integer'];
-		// $rules[] = [['time','time_to'], 'default', 'value' => time()];
-		$rules[] = ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')];
-		$rules[] = ['slug', 'default', 'value' => null];
-		$rules[] = ['status', 'default', 'value' => self::STATUS_ON];
-		$rules[] = ['owner', 'integer'];
-		$rules[] = ['webcams', 'safe'];
-		$rules[] = [['latitude','longitude'], 'required',
-			'when' => function ($model) {
-				 return !empty($model->city_id);
-			 },
-			'whenClient' => 'function(attribute,value){
-				if($("#' . Html::getInputId($this, 'latitude') . '").val()==""){
-					$(".field-item-locality_id .alert.alert-danger").remove()
-					$(".field-item-locality_id").append("<div class=\"alert alert-danger mt-15 mb-0\">' . Yii::t('easyii', 'You must enter the marker on the map') . '<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">×</span></button></div>");
-				}
-				return $("#' . Html::getInputId($this, 'city_id') . '").val()!=="";
-			}','message' => ''// Yii::t('easyii', 'You must enter the marker on the map')
-		];
-
-		if(!Yii::$app->request->post($modelName)['translations']){
-			$rules[] = ['title', 'required'];
-		}
-
-		if($this->module->settings['itemSale']){
-			$rules[] = ['price', 'required'];
-		}
-
-		$rules[] = [['date_range'], 'match', 'pattern' => '/^.+\s\-\s.+$/'];
-
-
-		$rules[] = ['translations', 'safe'];
-		
-		$rules[] = ['tagNames', 'safe'];
 
 		return $rules;
-	}
-
-	public function attributeLabels()
-	{
-		return [
-			'parent_class'	=>	Yii::t('easyii', 'Module'),
-
-			// 'selectCategories'	=>	Yii::t('easyii', 'Category'),
-			'category_id'	=>	Yii::t('easyii', 'Category'),
-			'title'			=>	Yii::t('easyii', 'Title'),
-			'preview'		=>	Yii::t('easyii', 'Change main photo'),
-			'image'			=>	Yii::t('easyii', 'Upload background and main photo'),
-			'description'	=>	Yii::t('easyii', 'Description'),
-			'available'		=>	Yii::t('easyii/' . $this->module->name, 'Available'),
-			'price'			=>	Yii::t('easyii/' . $this->module->name, 'Price'),
-			'discount'		=>	Yii::t('easyii/' . $this->module->name, 'Discount'),
-			'time'			=>	Yii::t('easyii', 'Date'),
-			'time_to'		=>	Yii::t('easyii', 'Date'),
-			'slug'			=>	Yii::t('easyii', 'Slug'),
-			'owner'			=>	IS_MODER ? Yii::t('easyii/' . $this->module->name, 'Owner') : Yii::t('easyii', 'Authorize yourself as the owner'),
-			'gradient'		=>	Yii::t('easyii/' . $this->module->name, 'Choose Color'),
-			'gradient_to'	=>	Yii::t('easyii/' . $this->module->name, 'To Color'),
-
-			'continent'		=>	Yii::t('easyii/' . $this->module->name, 'Continent'),
-			'country'		=>	Yii::t('easyii/' . $this->module->name, 'Country'),
-			'region'		=>	Yii::t('easyii/' . $this->module->name, 'Region'),
-			'city'			=>	Yii::t('easyii/' . $this->module->name, 'City'),
-			'street'		=>	Yii::t('easyii/' . $this->module->name, 'Street'),
-			'number'		=>	Yii::t('easyii/' . $this->module->name, 'Number'),
-
-			'latitude'		=>	Yii::t('easyii', 'Latitude'),
-			'longitude'		=>	Yii::t('easyii', 'Longitude'),
-			
-			'tagNames'		=>	Yii::t('easyii', 'Tags'),
-		];
-	}
-
-	public function behaviors()
-	{
-		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
-
-		return [
-			'categoriesBehavior'	=>	[
-				'class'					=>	CategoriesBehavior::className(),
-				'classCategory'			=>	$Category,
-				'classCategoryAssign'	=>	$CategoryAssign,
-			],
-			'fieldsBehavior'		=>	[
-				'class'					=>	FieldsBehavior::className(),
-				'fieldsClass'			=>	\bin\admin\models\CField::className(),
-				'categoryClass'			=>	$Category,
-			],
-			'dataBehavior'		=>	[
-				'class'					=>	ParseBehavior::className(),
-				'attribute'				=> 'data',
-				'categoryClass'			=>	$ItemData,
-			],
-			'contactsBehavior'		=>	[
-				'class'					=>	ParseBehavior::className(),
-				'attribute'				=> 'contacts',
-				'categoryClass'			=>	$ItemContacts,
-			],
-			'geoBehavior'	=>	[
-				'class'					=>	GeoBehavior::className(),
-			],
-			'albumBehavior'			=>	[
-				'class'					=>	GuiBehavior::className(),
-				'model'					=>	Album::className(),
-				'isRoot'				=>	IS_USER,
-				'identity'				=>	Yii::$app->user->identity->id,
-			],
-			'photoBehavior'			=>	[
-				'class'					=>	GuiBehavior::className(),
-				'model'					=>	Photo::className(),
-				'isRoot'				=>	IS_MODER,
-				'identity'				=>	Yii::$app->user->identity->id,
-			],
-			'dateRangeBehavior'		=>	[
-				'class'					=>	DateRangeBehavior::className(),
-				'attribute'				=>	'date_range',
-				'dateStartAttribute'	=>	'time',
-				'dateEndAttribute'		=>	'time_to',
-				// 'dateStartFormat'	=>	Yii::$app->formatter->datetimeFormat,
-				// 'dateEndFormat'		=>	Yii::$app->formatter->datetimeFormat,
-			],
-			'seoBehavior'			=>	SeoBehavior::className(),
-			'translateBehavior'		=>	TranslateBehavior::className(),
-			'taggabble'				=>	Taggable::className(),
-			'sluggable'				=>	[
-				'class'					=>	SluggableBehavior::className(),
-				'attribute'				=>	'title',
-				'ensureUnique'			=>	true
-			],
-		];
 	}
 
 	public static function create($attributes = [])
@@ -295,11 +124,19 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		}
 	}
 
+	public function archive()
+	{
+		if($this->status == static::STATUS_ARCHIVE){
+			$this->status = static::STATUS_OFF;
+		}else{
+			$this->status = static::STATUS_ARCHIVE;
+		}
+		$this->update();
+	}
+
 	public function beforeSave($insert)
 	{
 		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
-
-		// $this->category_id = $this->selectCategories[0];
 
 		if($this->isNewRecord)
 		{
@@ -310,7 +147,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 				$this->time_to = time();
 			}
 		}
-		
+
 		if(!IS_MODER){
 			if($this->isAttributeChanged('owner') && $this->owner == 1){
 				$this->owner = Yii::$app->user->identity->id;
@@ -321,9 +158,12 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 		if (parent::beforeSave($insert))
 		{
-			// if(!$insert && $this->image != $this->oldAttributes['image'] && $this->oldAttributes['image']){
-			// 	@unlink(Yii::getAlias('@webroot').$this->oldAttributes['image']);
-			// }
+			$this->time		=	$this->validDate($this->time) ?
+								$this->time :
+								(new \DateTime($this->time))->format('U');
+			$this->time_to	=	$this->validDate($this->time_to) ?
+								$this->time_to :
+								(new \DateTime($this->time_to))->format('U');
 
 			if(!empty($this->module->settings['submoduleClass'])){
 				$this->parent_class = $this->module->settings['submoduleClass'];
@@ -333,13 +173,13 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 			if(!$this->category_id || (!is_object($this->category_id) && !is_array($this->category_id))){
 				if(!$this->category_id){
-		            $this->category_id = new \stdClass();
-		        }else{
-		        	$this->category_id = [$this->category_id];
-		        }
-	        }
-	        
-	        $this->category_id = json_encode($this->category_id);
+					$this->category_id = new \stdClass();
+				}else{
+					$this->category_id = [$this->category_id];
+				}
+			}
+
+			$this->category_id = json_encode($this->category_id);
 
 			if($this->isNewRecord || !$this->created_by){
 
@@ -366,9 +206,9 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 		foreach($this->data as $name => $value){
 			if(!is_array($value) && !is_object($value)){
-				
+
 				$this->insertDataValue($name, $value);
-				
+
 			} else {
 
 				foreach($value as $arrayItem){
@@ -383,9 +223,9 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 		foreach($this->contacts as $name => $value){
 			if(!is_array($value) && !is_object($value)){
-				
+
 				$this->insertContactsValue($name, $value);
-				
+
 			} else {
 
 				foreach($value as $arrayItem){
@@ -393,6 +233,19 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 				}
 			}
 		}
+
+		if(!$this->image && !empty($this->photos))
+		{
+			var_dump($this->photos);die;
+			Yii::$app->db->createCommand(
+				'UPDATE ' . static::tableName() . ' SET image=:image WHERE ' . static::primaryKey()[0] . '=:id',
+				[
+					'id' => $this->primaryKey,
+					'image' => $this->photos[0]->image,
+				]
+			)->execute();
+		}
+
 	}
 
 	public function afterFind()
@@ -428,9 +281,9 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
 		$this->insertData($ItemData::tableName(), [
-			'item_id' => $this->primaryKey,
-			'name' => $name,
-			'value' => $value,
+			'item_id'	=> $this->primaryKey,
+			'name'		=> $name,
+			'value'		=> $value,
 		]);
 	}
 
@@ -443,9 +296,9 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
 		$this->insertData($ItemContacts::tableName(), [
-			'item_id' => $this->primaryKey,
-			'name' => $name,
-			'value' => $value,
+			'item_id'	=> $this->primaryKey,
+			'name'		=> $name,
+			'value'		=> $value,
 		]);
 	}
 
@@ -466,6 +319,16 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		return Yii::$app->db->createCommand()->insert($dbname, $data)->execute();
 	}
 
+	public function getAllStatusesArray()
+	{
+		return [
+			static::STATUS_OFF		=>	Yii::t('easyii', 'Pending moderation') . '&nbsp;' . Widget\Badge::widget(['label' => static::find()->where(['status' => static::STATUS_OFF])->count(), 'float' => 'right']),
+			static::STATUS_ON		=>	Yii::t('easyii', 'Moderated') . '&nbsp;' . Widget\Badge::widget(['label' => static::find()->where(['status' => static::STATUS_ON])->count(), 'float' => 'right']),
+			static::STATUS_ARCHIVE	=>	Yii::t('easyii', 'Archived') . '&nbsp;' . Widget\Badge::widget(['label' => static::find()->where(['status' => static::STATUS_ARCHIVE])->count(), 'float' => 'right']),
+			static::STATUS_COPY		=>	Yii::t('easyii', 'Copied') . '&nbsp;' . Widget\Badge::widget(['label' => static::find()->where(['status' => static::STATUS_COPY])->count(), 'float' => 'right']),
+		];
+	}
+
 	public function getCategory()
 	{
 		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
@@ -478,7 +341,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		if($width != null || $height != null){
 			return Image::thumb($this->image, $width, $height);
 		}
-		
+
 		return $this->image;
 	}
 
@@ -487,7 +350,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		if($width != null || $height != null){
 			return Image::thumb($this->preview, $width, $height);
 		}
-		
+
 		return $this->preview;
 	}
 
@@ -496,9 +359,14 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		return $this->hasMany(Album::className(), ['item_id' => 'item_id'])->where(['class' => self::className()]);
 	}
 
-	public function getPhotos()
+	public function getPhotos($filters = null)
 	{
 		return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->orderBy(['main' => SORT_DESC, 'order_num' => SORT_DESC]);
+	}
+
+	public function getPhotosReview()
+	{
+		return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->andWhere(['is', 'field_instance', new \yii\db\Expression('null')])->orderBy(['main' => SORT_DESC, 'order_num' => SORT_DESC]);
 	}
 
 	public function getVideos()
@@ -537,7 +405,7 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		foreach ($dataProvider->query->all() as $key => $item) {
 			$members[] = $item->owner->primaryKey;
 		}
-		
+
 		$members = array_unique($members);
 
 		$searchModel  = \Yii::createObject(UserSearch::className());
@@ -579,6 +447,8 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 	public function search($params, $filters = null, $pagination = 20, $sort = null)
 	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
 		$query = static::find();
 
 		if (!empty($filters)) {
@@ -595,29 +465,147 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 
 		$dataProvider = new ActiveDataProvider(['query' => $query]);
 		$dataProvider->sort->defaultOrder = ['status' => SORT_ASC, 'item_id' => SORT_DESC];
-		// $dataProvider->pagination->pageSize = Yii::$app->session->get('per-page', $pagination);
 		$dataProvider->pagination->pageSize = (Yii::$app->request->get('per-page') ?? $pagination);
 
 		if (!($this->load($params))) {
 			return $dataProvider;
 		}
 
+		// if(!empty($this->category_id))
+		// {
+		// 	$query->joinWith('categories')->andFilterWhere(['IN', $Category::tableName() . '.category_id', $this->category_id]);
+		// }
+
+		$this->filterFields($query, $params['Item']);
+
+		$this->filterCategory($query);
+
+		$this->filterWhereMultiple($query, 'country_id');
+		$this->filterWhereMultiple($query, 'region_id');
+		$this->filterWhereMultiple($query, 'city_id');
+
+		$this->filterWhereMultiple($query, 'status');
+
+		$this->time		=	$this->validDate($this->time) ?
+							$this->time :
+							(new \DateTime($this->time))->format('U');
+		$this->time_to	=	$this->validDate($this->time_to) ?
+							$this->time_to :
+							(new \DateTime($this->time_to))->format('U');
+
 		$dataProvider->query
-			->andFilterWhere(['parent_class' => $this->parent_class])
-			// ->andFilterWhere(['parent_id' => $this->parent_id])
 			->andFilterWhere(['like', 'title', $this->title])
 			->andFilterWhere(['like', 'description', $this->description])
-			->andFilterWhere(['country_id' => $this->country_id])
-			->andFilterWhere(['region_id' => $this->region_id])
-			->andFilterWhere(['city_id' => $this->city_id])
-			->andFilterWhere(['created_by' => $this->created_by])
-			->andFilterWhere(['updated_by' => $this->updated_by])
-			->andFilterWhere(['owner' => $this->owner])
-			->andFilterWhere(['status' => $this->status])
-			->andFilterWhere(['>=', 'time', $this->time])
-			->andFilterWhere(['<', 'time_to', $this->time_to]);
+			->andFilterWhere(['or', ['in', 'status', $this->status],['status' => $this->status]])
+
+			->andFilterWhere(['parent_class'	=> $this->parent_class])
+			// ->andFilterWhere(['parent_id'		=> $this->parent_id])
+			->andFilterWhere(['created_by'		=> $this->created_by])
+			->andFilterWhere(['updated_by'		=> $this->updated_by])
+			->andFilterWhere(['owner'			=> $this->owner])
+			->andFilterWhere(['price'			=> $this->price])
+
+			->andFilterWhere(['>=',	'time',		$this->time])
+			->andFilterWhere(['<=',	'time_to',	$this->time_to])
+			->andFilterWhere(['>=',	'price',	$this->priceFrom])
+			->andFilterWhere(['<=',	'price',	$this->priceTo])
+
+			->andFilterWhere(['like', 'latitude', $this->latitude])
+			->andFilterWhere(['like', 'longitude', $this->longitude]);
+
+		// if(!$this->priceFrom){
+		// 	$query->andFilterWhere(['<=', 'price', (int)$this->priceTo]);
+		// } elseif(!$this->priceTo) {
+		// 	$query->andFilterWhere(['>=', 'price', (int)$this->priceFrom]);
+		// } else {
+		// 	$query->andFilterWhere(['between', 'price', (int)$this->priceFrom, (int)$this->priceTo]);
+		// }
 
 		return $dataProvider;
+	}
+
+	protected function filterCategory($query)
+	{
+		if(!empty($this->category_id))
+		{
+			$filter = ['or'];
+			foreach ($this->category_id as $categoryId)
+			{
+				array_push($filter, ['like', 'category_id', '"' . $categoryId . '"']);
+			}
+			$query->andFilterWhere($filter);
+		}
+		return $query;
+	}
+
+	protected function filterWhereMultiple($query, $field)
+	{
+		if(!empty($this->{$field}))
+		{
+			$filter = ['or'];
+			if(is_array($this->{$field}) || is_object($this->{$field}))
+			{
+				foreach ($this->{$field} as $value) {
+					array_push($filter, [$field => $value]);
+				}
+			}else{
+				array_push($filter, [$field => $this->{$field}]);
+			}
+			$query->andFilterWhere($filter);
+		}
+		return $query;
+	}
+
+	protected function filterFields($query, $params)
+	{
+		foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
+
+		if(!empty($params))
+		{
+			$unset = [
+				'category_id',
+				'title', 'description',
+				'latitude', 'longitude', 'radius',
+				'created_by', 'updated_by', 'owner',
+				'status',
+				'date_range', 'time', 'time_to',
+				'country_id', 'region_id', 'city_id',
+			];
+			foreach ($params as $param => $values)
+			{
+				if(in_array($param, $unset))
+				{
+					unset($params[$param]);
+				}
+			}
+
+			$subQuery = $ItemData::find();
+
+			foreach($params as $field => $value)
+			{
+				if(empty($value))
+				{
+					unset($params[$field]);
+				}
+				elseif(!is_array($value))
+				{
+					$subQuery->where(['and', ['name' => $field], ['like', 'value', $value]]);
+				}
+				elseif($value['min'] && $value['max'])
+				{
+
+					$subQuery->where(['>=', 'value', (int)$value['min']])->andFilterWhere(['<=', 'value', (int)$value['max']])->andFilterWhere(['name' => $field]);
+				}
+				else
+				{
+					$subQuery->where(['and', ['name' => $field], ['in', 'value', $value]]);
+				}
+
+				$check = $subQuery->groupBy('item_id')->all();
+				$query->andWhere(['item_id' => ArrayHelper::getColumn($check,'item_id')]);
+			}
+		}
+		return $query;
 	}
 
 	protected function searchByRadius($query, $filters = [])
@@ -662,11 +650,21 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 		return $sortByDistance;
 	}
 
-	protected static function calculateDistance($lat1, $lon1, $lat2, $lon2, $round = false) {
+	protected static function calculateDistance($lat1, $lon1, $lat2, $lon2, $round = false)
+	{
+		$lat1 = deg2rad($lat1);
+		$lon1 = deg2rad($lon1);
+		$lat2 = deg2rad($lat2);
+		$lon2 = deg2rad($lon2);
 
-		$lat1=deg2rad($lat1);$lon1=deg2rad($lon1);$lat2=deg2rad($lat2);$lon2=deg2rad($lon2);
-
-		$distance = 6378137 * acos( cos( $lat1 ) * cos( $lat2 ) * cos( $lon1 - $lon2 ) + sin( $lat1 ) * sin( $lat2 ) );
+		$distance = 6378137 *
+			acos(
+				cos( $lat1 ) *
+				cos( $lat2 ) *
+				cos( $lon1 - $lon2 ) +
+				sin( $lat1 ) *
+				sin( $lat2 )
+			);
 
 		return $round ? round($distance) : $distance;
 	}
@@ -675,8 +673,28 @@ class Item extends \kilyakus\modules\components\ActiveRecord
 	{
 		$distance = Yii::$app->cache->get(static::tableName() . '_' . $this->primaryKey);
 		$distance = $distance > 999
-		? round($distance/1000,1) . 'км'
-		: round($distance) . 'м';
+			? round($distance/1000,1) . 'км'
+			: round($distance) . 'м';
 		return $distance;
+	}
+
+	public static function getMinTime()
+	{
+		return static::find()->orderBy('time ASC')->one()->time;
+	}
+
+	public static function getMaxTime()
+	{
+		return static::find()->orderBy('time_to DESC')->one()->time_to;
+	}
+
+	public static function getMinPrice()
+	{
+		return static::find()->orderBy('price ASC')->one()->price;
+	}
+
+	public static function getMaxPrice()
+	{
+		return static::find()->orderBy('price DESC')->one()->price;
 	}
 }

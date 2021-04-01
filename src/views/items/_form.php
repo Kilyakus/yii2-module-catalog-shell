@@ -19,6 +19,7 @@ use kilyakus\modules\models\Setting;
 use kilyakus\widget\daterange\DateRangePicker;
 
 use kilyakus\shell\directory\assets\FieldsAsset;
+use kilyakus\shell\directory\widgets\DynamicFields\DynamicFields;
 use bin\admin\modules\geo\api\Geo;
 
 
@@ -73,7 +74,7 @@ $submoduleClass = $settings['submoduleClass']; ?>
 			?>
 		</div>
 		<div class="col-xs-12 col-md-6">
-			<?php 
+			<?php
 			// $form->field($model, 'parent_id')->widget(Widget\DepDrop::classname(), [
 			//	 'data' => (($parent_class = $model->parent_class) && $model->parent_id) ? [$model->parent_id => $parent_class::findOne($model->parent_id)->title] : ($parent ? [$parent => $class::findOne($parent)->title] : null),
 			//	 'type' => Widget\DepDrop::TYPE_SELECT2,
@@ -86,7 +87,7 @@ $submoduleClass = $settings['submoduleClass']; ?>
 			//		 'loadingText' => 'Loading ...',
 			//		 'placeholder' => $link['select'][''],
 			//	 ]
-			// ]); 
+			// ]);
 			?>
 		</div>
 	</div> -->
@@ -139,14 +140,14 @@ $submoduleClass = $settings['submoduleClass']; ?>
 	?>
 <?php endif; ?>
 
-<?php if($settings['enablePhotos']) : ?>
-	<?= \bin\admin\widgets\ModulePhotos\ModulePhotos::widget(['model' => $model])?>
-<?php endif; ?>
+<?php if($settings['enablePhotos']){
+	echo \bin\admin\widgets\ModulePhotos\ModulePhotos::widget(['model' => $model, 'photos' => $model->photos]);
+} ?>
 
 <?php if($settings['enableMaps']) : ?>
 	<div class="row">
 		<div class="col-xs-12 col-md-4">
-			<?php 
+			<?php
 			// echo $form->field($model, 'region_id')->widget(Widget\Select2::classname(), [
 			//	 'data' => $model->region_id ? (Geo::region($model->region_id) ? ArrayHelper::map(Geo::region($model->region_id), 'id', 'name_ru') : null) : null,
 			//	 'options' => [
@@ -170,7 +171,7 @@ $submoduleClass = $settings['submoduleClass']; ?>
 			?>
 			<?=	$form->field($model, 'city_id')
 				->widget(Widget\Select2::classname(), [
-				'data'					=> $model->city_id ? (Geo::city($model->city_id) ? ArrayHelper::map(Geo::city($model->city_id), 'id', 'name_ru') : null) : null,
+				'data'					=> $model->city ? [$model->city->id => $model->city->name] : null,
 				'options'				=> [
 					'id'					=> 'item-locality_id',
 					'value'					=> $model->city_id,
@@ -202,19 +203,19 @@ $submoduleClass = $settings['submoduleClass']; ?>
 
 		<div class="col-xs-12 col-md-8">
 			<?php
-			$htmlContent = Html::tag('h4',$model->title);
-			$htmlContent .= Html::img(Image::thumb($model->image, 340,120),['class' => 'w-100 img-rounded mb-2']);
-			$htmlContent .= Widget\Button::widget([
-				'type' => Widget\Button::TYPE_SECONDARY,
-				'title' => Yii::t('easyii', 'Open in new tab'),
-				'icon' => 'fa fa-external-link-alt',
-				'url' => Url::toRoute(['/catalog/view','slug' => $model->slug]),
-				'block' => true,
-				'options' => [
-					'data-pjax' => 0,
-					'target' => '_blank'
-				]
-			]);
+				$htmlContent = Html::tag('h4',$model->title);
+				$htmlContent .= Html::img(Image::thumb($model->image, 340,120),['class' => 'w-100 img-rounded mb-2']);
+				$htmlContent .= Widget\Button::widget([
+					'type' => Widget\Button::TYPE_SECONDARY,
+					'title' => Yii::t('easyii', 'Open in new tab'),
+					'icon' => 'fa fa-external-link-alt',
+					'url' => Url::toRoute(['/catalog/view','slug' => $model->slug]),
+					'block' => true,
+					'options' => [
+						'data-pjax' => 0,
+						'target' => '_blank'
+					]
+				]);
 			?>
 			<?= GoogleMaps::widget([
 				'geocode'			=> true,
@@ -243,13 +244,17 @@ $submoduleClass = $settings['submoduleClass']; ?>
 <?php endif; ?>
 
 <?=	$form->field($model, 'description')
-	->widget(TranslateForm::classname(), [])
+	->widget(TranslateForm::classname(), [
+		'uploadUrl' => Url::to(['/' . $this->context->module->module->id . '/redactor/upload', 'class' => $model::className(), 'item_id' => $model->primaryKey, 'field_instance' => 'description'])
+	])
 	->label(false); ?>
 
+<?= DynamicFields::widget(['model' => $model]); ?>
+
 <?php if(count($dataForm) == 1) : ?>
-	<div class="row" style="margin:0;">
-		<?= $dataForm; ?>
-	</div>
+	<!-- <div class="row" style="margin:0;"> -->
+		<?php // $dataForm; ?>
+	<!-- </div> -->
 <?php endif; ?>
 
 <?php if($settings['itemSale']) : ?>
@@ -259,9 +264,11 @@ $submoduleClass = $settings['submoduleClass']; ?>
 <?php endif; ?>
 
 
-<?php 
-$model->time = date(Yii::$app->formatter->datetimeFormat, ($model->time ? $model->time : time()));
-$model->time_to = date(Yii::$app->formatter->datetimeFormat, ($model->time_to ? $model->time_to : time()));
+<?php
+// $model->time = date(Yii::$app->formatter->datetimeFormat, ($model->time ? $model->time : time()));
+// $model->time_to = date(Yii::$app->formatter->datetimeFormat, ($model->time_to ? $model->time_to : time()));
+$model->time = $model->time ? $model->time : time();
+$model->time_to = $model->time_to ? $model->time_to : time();
 ?>
 <?=	$form->field($model, 'date_range')
 	->widget(DateRangePicker::classname(), [
@@ -305,7 +312,7 @@ $model->time_to = date(Yii::$app->formatter->datetimeFormat, ($model->time_to ? 
 <?php if(!IS_MODER) : ?>
 	<?=	$form->field($model, 'owner',['template' => '{input}{label}'])
 		->checkbox([
-			'id' => 'item-owner', 
+			'id' => 'item-owner',
 			'class' => 'switch',
 			'checked' => ($model->owner == Yii::$app->user->identity->id ? true : false)
 		]); ?>
@@ -336,7 +343,7 @@ $model->time_to = date(Yii::$app->formatter->datetimeFormat, ($model->time_to ? 
 var formatRepo = function (repo) {
 	if (repo.loading) {return repo.text;}
 	var markup =
-'<div class="row">' + 
+'<div class="row">' +
 	'<div class="col-sm-9 col-md-10"> ' + repo.text + '</div>' +
 	'<div class="col-sm-3 col-md-2 text-right">' + repo.id + '</div>' +
 '</div>';
@@ -351,7 +358,7 @@ JS;
 $this->registerJs($formatJs, \yii\web\view::POS_HEAD);
 ?>
 	<?php $permissions=['' => Yii::t('easyii/infrastructure','Select')];foreach (Yii::$app->authManager->getTariffs() as $permission => $data) {$permissions[$permission] = $data->description;} ?>
-	<?=$form->field($model, 'permission')->widget(Widget\Select2::classname(),
+	<?= $form->field($model, 'permission')->widget(Widget\Select2::classname(),
 	[
 		'data' => $permissions,
 		'options' => [

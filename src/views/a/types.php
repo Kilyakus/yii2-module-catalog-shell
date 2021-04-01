@@ -2,15 +2,15 @@
 use bin\admin\widgets\CTypes\CTypes;
 use kilyakus\web\widgets as Widget;
 
-$this->title = $model->title . ': ' . Yii::t('easyii', 'Sections');
+$this->render('@bin/admin/views/category/_breadcrumbs');
 ?>
 
-<?= $this->render('@bin/admin/views/category/_menu', ['category' => $model]) ?>
-
 <?php Widget\Portlet::begin([
+	'title' => Yii::t('easyii', 'Customize sections'),
+	'icon' => 'fas fa-layer-group',
 	'headerContent' => $this->render('_submenu', ['model' => $model]),
 	'options' => [
-		'class' => 'kt-portlet--tabs'
+		'class' => 'kt-portlet--tabs mt-5'
 	],
 ]) ?>
 	<?= CTypes::widget(['model' => $model])?>

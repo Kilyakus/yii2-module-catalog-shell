@@ -22,22 +22,25 @@ if($settings['enableCategory']){
 		];
 	}
 
-	if(count($breadcrumbs) <= 1){
-		foreach ($breadcrumbs as $key => $breadcrumb){
-			$nav[] = [
-				'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $breadcrumb,
-				'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $key, 'class' => $class, 'parent' => $parent]),
-			];
+	if(is_array($breadcrumbs))
+	{
+		if(count($breadcrumbs) <= 1){
+			foreach ($breadcrumbs as $key => $breadcrumb){
+				$nav[] = [
+					'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $breadcrumb,
+					'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $key, 'class' => $class, 'parent' => $parent]),
+				];
+			}
+		}else{
+			$childrens = [];
+			foreach ($breadcrumbs as $key => $breadcrumb){
+				$childrens[] = [
+					'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $breadcrumb,
+					'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $key, 'class' => $class, 'parent' => $parent]),
+				];
+			}
+			$nav[] = ['label' => Yii::t('easyii','Back to categories'),'items' => $childrens,];
 		}
-	}else{
-		$childrens = [];
-		foreach ($breadcrumbs as $key => $breadcrumb){
-			$childrens[] = [
-				'label' => (($action !== 'index') ? '<i class="fa fa-chevron-left"></i>&nbsp; ' : '') . $breadcrumb,
-				'url' => Url::to(['/' . $module . '/'.$moduleName.'/items/index', 'id' => $key, 'class' => $class, 'parent' => $parent]),
-			];
-		}
-		$nav[] = ['label' => Yii::t('easyii','Back to categories'),'items' => $childrens,];
 	}
 	$nav[] = [
 		'label' => '<i class="fa fa-plus"></i>&nbsp; ' . Yii::t('easyii', 'Add'),

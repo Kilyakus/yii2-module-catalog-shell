@@ -2,15 +2,15 @@
 use bin\admin\widgets\CFields\CFields;
 use kilyakus\web\widgets as Widget;
 
-$this->title = ($model->title ? $model->title . ': ' . Yii::t('easyii', 'Fields') : Yii::t('easyii', 'Additional fields'));
+$this->render('@bin/admin/views/category/_breadcrumbs');
 ?>
 
-<?= $this->render('@bin/admin/views/category/_menu', ['category' => $model]) ?>
-
 <?php Widget\Portlet::begin([
+	'title' => Yii::t('easyii', 'Customize filters'),
+	'icon' => 'fas fa-filter',
 	'headerContent' => $this->render('_submenu', ['model' => $model]),
 	'options' => [
-		'class' => 'kt-portlet--tabs'
+		'class' => 'kt-portlet--tabs mt-5'
 	],
 ]) ?>
 	<?= CFields::widget(['model' => $model])?>

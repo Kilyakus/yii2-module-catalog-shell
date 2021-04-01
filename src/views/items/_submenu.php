@@ -79,5 +79,10 @@ foreach (Yii::$app->getModule('admin')->activeModules as $key => $activeModule) 
 			'active' => ($action === 'webcams'),
 			'visible' => $settings['enableWebcams'],
 		],
+		[
+			'label' => '<span class="fa fa-comments"></span>&nbsp; ' . Yii::t('easyii/'.$moduleName, 'Chats'),
+			'url' => Url::to(['/' . $module . '/' . $moduleName . '/items/chats', 'id' => $model->primaryKey]),
+			'active' => ($action === 'chats'),
+		],
 	],$modules),
 ]) ?>

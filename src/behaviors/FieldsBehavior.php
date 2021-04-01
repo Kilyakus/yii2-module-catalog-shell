@@ -24,7 +24,7 @@ class FieldsBehavior extends Behavior
         $categoryClass = $this->categoryClass;
 
         $filter = ['category_id' => $this->owner->categoriesKeys, 'class' => $categoryClass];
-        
+
         return $fieldsClass::find()->where(['and',$filter, ['depth' => 0]])->orderBy(['order_num' => SORT_DESC])->all();
 
         // return $this->owner->hasMany($fieldsClass::className(), ['favorite_id' => 'favorite_id'])->via('fieldsAssigns');

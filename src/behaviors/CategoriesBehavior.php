@@ -4,7 +4,9 @@ namespace kilyakus\shell\directory\behaviors;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\base\Behavior;
+use yii\data\ActiveDataProvider;
 use yii\helpers\ArrayHelper;
+use kilyakus\modules\components\ActiveQueryNS;
 
 class CategoriesBehavior extends Behavior
 {
@@ -36,7 +38,9 @@ class CategoriesBehavior extends Behavior
 	{
 		$className = $this->classCategory;
 
-		return $this->owner->hasMany($className::className(), ['category_id' => 'category_id'])->via('categoriesAssigns');
+		$categories = $this->owner->hasMany($className::className(), ['category_id' => 'category_id'])->via('categoriesAssigns');
+
+		return $categories;
 	}
 
 	public function getCategoriesNames()
@@ -64,6 +68,14 @@ class CategoriesBehavior extends Behavior
 			}
 		}
 		return $this->_categoriesKeys;
+	}
+
+	public function setCategories($values = [])
+	{
+		$className = $this->classCategory;
+
+		$this->owner->categories = $className::find()->where(['category_id' => $values])->all();
+		return $this->owner->categories;
 	}
 
 	public function setCategoriesNames($values)
@@ -102,7 +114,7 @@ class CategoriesBehavior extends Behavior
 	public function getAllCategoriesTree()
 	{
 		$Category = $this->classCategory;
-		
+
 		$categories = $key = $val = array();
 		if(Yii::$app->controller->module->module->id != 'admin'){
 			$status = false;
@@ -213,10 +225,5 @@ class CategoriesBehavior extends Behavior
 	private function insertData($dbname, $data = [])
 	{
 		return Yii::$app->db->createCommand()->insert($dbname, $data)->execute();
-	}
-
-	public function searchByCategory($params)
-	{
-		return $dataProvider;
 	}
 }

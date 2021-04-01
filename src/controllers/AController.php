@@ -29,6 +29,56 @@ class AController extends \bin\admin\controllers\CategoryController
         return parent::actionEdit($id);
     }
 
+    public function actionPhotos()
+    {
+        if(!Yii::$app->request->post())
+        {
+            $searchModel  = \Yii::createObject(Photo::className());
+            $dataProvider = $searchModel->search(\Yii::$app->request->get());
+            $dataProvider->query->andFilterWhere([
+                'and', [
+                    'class' => $this->itemClass
+                ],
+                ['not', ['status' => Photo::STATUS_UPLOADED]]
+            ])->groupBy('item_id');
+
+            $searchProvider = $searchModel->search(\Yii::$app->request->get());
+            $searchProvider->query->andFilterWhere([
+                'and', [
+                    'class' => $this->itemClass
+                ],
+                ['not', ['status' => Photo::STATUS_UPLOADED]]
+            ])->groupBy('item_id');
+
+            // foreach ($searchProvider->query->all() as $item)
+            // {
+            //     $className = $item->class;
+            //     $model = $className::find()->where(['item_id' => $item->item_id])->one();
+            //     var_dump($model);die;
+            // }
+
+            $columns = Photo::find()->groupBy('class')->all();
+
+            $modules = [];
+            foreach ($columns as $item) {
+                if(isset($item->parent->module)) {
+                    $modules[$item->class] = Yii::t('easyii/'.$item->parent->module->name, $item->parent->module->title);
+                }else{
+                    $modules[$item->class] = $item->class;
+                }
+            }
+
+            return $this->render('@kilyakus/shell/directory/views/a/photos', [
+                'dataProvider' => $dataProvider,
+                'searchProvider' => $searchProvider,
+                'searchModel' => $searchModel,
+                'modules' => $modules,
+            ]);
+        }else{
+            return self::update();
+        }
+    }
+
     public function actionFields($id = null)
     {
         foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
@@ -36,7 +86,7 @@ class AController extends \bin\admin\controllers\CategoryController
         if(!($model = $Category::findOne($id))){
             $model = new $Category;
         }
-        
+
         Yii::$app->user->returnUrl = $_SERVER['REQUEST_URI'];
 
         return $this->render('@kilyakus/shell/directory/views/a/fields', [
@@ -57,12 +107,15 @@ class AController extends \bin\admin\controllers\CategoryController
         ]);
     }
 
-    public function actionTypes($id)
+    public function actionTypes($id = null)
     {
         foreach ($this->transferClasses as $item => $class){if(!is_array($class)){${$item} = $class;}}
 
-        if(!($model = $Category::findOne($id))){
-            return $this->redirect(['/admin/'.$this->module->id]);
+        // if(!($model = $Category::findOne($id))){
+        //     return $this->redirect(['/admin/'.$this->module->id]);
+        // }
+		if(!($model = $Category::findOne($id))){
+            $model = new $Category;
         }
 
         return $this->render('@kilyakus/shell/directory/views/a/types', [
@@ -94,7 +147,7 @@ class AController extends \bin\admin\controllers\CategoryController
         if(!class_exists(get_class(new ForumCategory))){
             return $this->redirect(['/admin/'.$this->module->id.'/a/edit/'.$id]);
         }
-        $items = [];        
+        $items = [];
         $forums = ArrayHelper::map(ForumCategory::find()->all(),'id','name');
         foreach ($forums as $key => $forum) {
             $childrens = ArrayHelper::map(Forum::find()->where(['category_id' => $key])->all(),'id','name');
@@ -118,7 +171,7 @@ class AController extends \bin\admin\controllers\CategoryController
                 }
             }else{
                 array_push($forums, $forumid);
-            }        
+            }
 
             $model->forums = implode(',',array_unique($forums));
             $model->update();
@@ -148,7 +201,7 @@ class AController extends \bin\admin\controllers\CategoryController
             Photo::deleteAll(['photo_id' => $image->photo_id]);
             @unlink(Yii::getAlias('@webroot').$image->image);
         }
-        
+
         $photo = new Photo;
         $photo->class = $Category;
         $photo->item_id = $id;

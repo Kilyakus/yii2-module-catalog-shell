@@ -55,7 +55,7 @@ class ItemsController extends \bin\admin\components\Controller
 	public function init()
 	{
 		parent::init();
-		
+
 		$module = API::getModule($this->moduleName);
 
 		$this->settings = $module->settings;
@@ -64,15 +64,15 @@ class ItemsController extends \bin\admin\components\Controller
 
 	public function chatAssign($model, $ids)
 	{
-		$chatClass = $this->chatClass;
+		$chatClassAssign = $this->chatClassAssign;
 
 		if(is_array($ids)){
 			foreach ($ids as $id) {
 				self::chatAssign($model, $id);
 			}
 		}else{
-			if(!$chat = $chatClass::find()->where(['item_id' => $ids])->one()){
-				$chatAssign = new $chatClass;
+			if(!$chat = $chatClassAssign::find()->where(['item_id' => $ids])->one()){
+				$chatAssign = new $chatClassAssign;
 				$chatAssign->item_id = $ids;
 				$chatAssign->chat_id = $model->id;
 				$chatAssign->save();
@@ -86,6 +86,7 @@ class ItemsController extends \bin\admin\components\Controller
 		$categoryAssign = $this->categoryAssign;
 		$itemClass = $this->itemClass;
 		$chatClass = $this->chatClass;
+		$chatClassAssign = $this->chatClassAssign;
 
 		if(!($model = $categoryClass::findOne($id))){
 			// return $this->redirect(['/' . $this->module->module->id . '/'.$this->module->id]);
@@ -100,7 +101,7 @@ class ItemsController extends \bin\admin\components\Controller
 
 			$item = Yii::$app->request->post('Item');
 
-			if(!$chat = $chatClass::find()->where(['item_id' => $item['item_id']])->one()){
+			if(!$chat = $chatClassAssign::find()->where(['item_id' => $item['item_id']])->one()){
 				$model = new \bin\admin\modules\chat\models\Group();
 				if ($model->load(Yii::$app->request->post())) {
 					$model->adminId = Yii::$app->user->id;
@@ -109,11 +110,11 @@ class ItemsController extends \bin\admin\components\Controller
 						self::chatAssign($model,$item['item_id']);
 
 						Yii::$app->session->setFlash('success','Комната создана');
-						return $this->redirect(['/admin/chat/message/groups','id'=>$model->id]);
+						return $this->redirect(['/admin/chat/message/groups', 'id' => $model->id]);
 					}
 				}
 			}else{
-				return $this->redirect(['/admin/chat/message/groups','id'=>$chat->chat_id]);
+				return $this->redirect(['/admin/chat/message/groups','id' => $chat->chat_id]);
 			}
 		}
 
@@ -130,7 +131,7 @@ class ItemsController extends \bin\admin\components\Controller
 		}
 
 		if(Yii::$app->request->get('Item')['nearby'] == 1){
-			
+
 			$parentClass = $this->module->settings['parentSubmodule'];
 
 			$parentModel = $parentClass::findOne($parent);
@@ -180,7 +181,7 @@ class ItemsController extends \bin\admin\components\Controller
 		]);
 
 		$items = $data->models;
-		
+
 		return $this->render('@kilyakus/shell/directory/views/items/index', [
 			'data' => $data,
 			'dataProvider' => $dataProvider,
@@ -190,6 +191,7 @@ class ItemsController extends \bin\admin\components\Controller
 			'breadcrumbs' => self::getBreadcrumbs($id),
 			'parent' => $parent,
 			'class' => $class,
+			'itemClass' => $itemClass,
 		]);
 	}
 
@@ -282,7 +284,7 @@ class ItemsController extends \bin\admin\components\Controller
 				// 'categories' => self::getCategories(),
 				'assign' => $assign,
 				'breadcrumbs' => self::getBreadcrumbs($id),
-				'dataForm' => self::getItemFields($cats),
+				// 'dataForm' => self::getItemFields($cats),
 				'link' => self::generateLink($model),
 				'parent' => $parent,
 				'class' => $class,
@@ -337,12 +339,30 @@ class ItemsController extends \bin\admin\components\Controller
 				'categories' => $model->categories,
 				'assign' => $model->categoriesKeys, //$this->getCategories($id)
 				'breadcrumbs' => $this->getBreadcrumbs($id),
-				'dataForm' => self::getItemFields($model->categoriesKeys, $model->data), //$this->getCategories($id)
+				// 'dataForm' => self::getItemFields($model->categoriesKeys, $model->data), //$this->getCategories($id)
 				'link' => self::generateLink($model),
 				'parent' => $parent,
 				'class' => $class,
 			]);
 		}
+	}
+
+	public function actionView($id)
+	{
+		$module = $this->module->module->id;
+		$categoryClass = $this->categoryClass;
+		$itemClass = $this->itemClass;
+
+		if(!($model = $itemClass::findOne($id))){
+			return $this->redirect(['/' . $module . '/' . $this->module->id]);
+		}
+
+		return $this->rendering('view', [
+			'model' => $model,
+			'breadcrumbs' => $this->getBreadcrumbs($id),
+			'parent' => $parent,
+			'class' => $class,
+		]);
 	}
 
 	public function update()
@@ -382,34 +402,34 @@ class ItemsController extends \bin\admin\components\Controller
 		}
 	}
 
-	protected function getItemFields($categories, $data = null)
-	{
-		$fields = [];
-
-		if(API::getModule($this->moduleName)->settings['enableCategory'] && count($categories)){
-
-			$filter = ['category_id' => $categories, 'class' => get_class(new $this->categoryClass), 'status' => 1];
-
-			foreach (CField::find()->where(['and',$filter,['depth' => 0]])->orderBy(['order_num' => SORT_DESC])->all() as $field) {
-				$fields[] = $field;
-			}
-
-			usort($fields, function($a, $b){
-				return ($a['category_id'] - $b['category_id']);
-			});
-
-			foreach ($fields as $key => $field) {
-				$fields[$key] = $field;
-			}
-
-			return $this->renderPartial('@kilyakus/shell/directory/views/items/dataForm', ['fields' => $fields, 'filter' => $filter, 'data' => $data]);
-
-		}else{
-
-			return false;
-
-		}
-	}
+	// protected function getItemFields($categories, $data = null)
+	// {
+	// 	$fields = [];
+	//
+	// 	if(API::getModule($this->moduleName)->settings['enableCategory'] && count($categories)){
+	//
+	// 		$filter = ['category_id' => $categories, 'class' => get_class(new $this->categoryClass), 'status' => 1];
+	//
+	// 		foreach (CField::find()->where(['and',$filter,['depth' => 0]])->orderBy(['order_num' => SORT_DESC])->all() as $field) {
+	// 			$fields[] = $field;
+	// 		}
+	//
+	// 		usort($fields, function($a, $b){
+	// 			return ($a['category_id'] - $b['category_id']);
+	// 		});
+	//
+	// 		foreach ($fields as $key => $field) {
+	// 			$fields[$key] = $field;
+	// 		}
+	//
+	// 		return $this->renderPartial('@kilyakus/shell/directory/views/items/dataForm', ['fields' => $fields, 'filter' => $filter, 'data' => $data]);
+	//
+	// 	}else{
+	//
+	// 		return false;
+	//
+	// 	}
+	// }
 
 	public function actionDataForm($id)
 	{
@@ -456,7 +476,7 @@ class ItemsController extends \bin\admin\components\Controller
 		} else {
 			$this->error = Yii::t('easyii', 'Not found');
 		}
-		
+
 		$this->formatResponse(Yii::t('easyii/' . $this->moduleName, 'Item deleted'));
 		// return $this->redirect(['/' . $module . '/'.$this->module->id]);
 		return $this->back();
@@ -505,16 +525,18 @@ class ItemsController extends \bin\admin\components\Controller
 	public function actionArchive($id = null)
 	{
 		$itemClass = $this->itemClass;
-		
+
 		if(!($model = $itemClass::findOne($id))){
 			// return $this->redirect(['/' . $this->module->module->id . '/'.$this->module->id]);
 		}
-		if($model->status == $itemClass::STATUS_ARCHIVE){
-			$model->status = $itemClass::STATUS_OFF;
-		}else{
-			$model->status = $itemClass::STATUS_ARCHIVE;
-		}
-		$model->update();
+		// if($model->status == $itemClass::STATUS_ARCHIVE){
+		// 	$model->status = $itemClass::STATUS_OFF;
+		// }else{
+		// 	$model->status = $itemClass::STATUS_ARCHIVE;
+		// }
+		// $model->update();
+
+		$model->archive();
 
 		$this->flash('success', Yii::t('easyii/' . $this->moduleName, 'Your entry has been archived.'));
 
@@ -542,11 +564,6 @@ class ItemsController extends \bin\admin\components\Controller
 	public function actionSeasonsForm($id){
 
 		return $this->renderPartial('@bin/admin/widgets/views/seasons_forms');
-	}
-
-	public function actionCommentsDown($id)
-	{
-		return $this->move($id, 'down');
 	}
 
 	public function actionUp($id, $category_id)
@@ -716,37 +733,37 @@ class ItemsController extends \bin\admin\components\Controller
 		return $return;
 	}
 
-	public function genContainer($html = null,$field = null,$label = true,$image = true)
-	{
-		if($label != false){
-			$label = '<label for="data-'.$field->name.'">'. Yii::t('easyii', $field->title) .'</label>';
-		}
-
-		if($image != false){
-
-			$image = Html::img(
-				Image::thumb($field->image, 41,41),[
-					'class' => 'img-responsive btn btn-icon',
-				]
-			);
-
-			$image = Html::tag('label', $image, [
-				'for' => 'data-' . $field->name,
-				'class' => 'input-group-prepend'
-			]);
-
-			$html = Html::tag('div',$image.$html,[
-				'class' => 'form-group input-group',
-				'data-toggle' => 'kt-tooltip',
-				'data-skin' => 'dark',
-				'data-placement' => 'bottom',
-				'data-html' => 'true',
-				'data-original-title' => $field->text,
-			]);
-
-			return $label . $html;
-		}else{
-			return $label . $html;
-		}
-	}
+	// public function genContainer($html = null,$field = null,$label = true,$image = true)
+	// {
+	// 	if($label != false){
+	// 		$label = '<label for="data-'.$field->name.'">'. Yii::t('easyii', $field->title) .'</label>';
+	// 	}
+	//
+	// 	if($image != false){
+	//
+	// 		$image = Html::img(
+	// 			Image::thumb($field->image, 41,41),[
+	// 				'class' => 'img-responsive btn btn-icon',
+	// 			]
+	// 		);
+	//
+	// 		$image = Html::tag('label', $image, [
+	// 			'for' => 'data-' . $field->name,
+	// 			'class' => 'input-group-prepend'
+	// 		]);
+	//
+	// 		$html = Html::tag('div',$image.$html,[
+	// 			'class' => 'form-group input-group',
+	// 			'data-toggle' => 'kt-tooltip',
+	// 			'data-skin' => 'dark',
+	// 			'data-placement' => 'bottom',
+	// 			'data-html' => 'true',
+	// 			'data-original-title' => $field->text,
+	// 		]);
+	//
+	// 		return $label . $html;
+	// 	}else{
+	// 		return $label . $html;
+	// 	}
+	// }
 }
